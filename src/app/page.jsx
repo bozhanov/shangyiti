@@ -47,8 +47,6 @@ export default function GamePage() {
 
   const soundsRef = useRef({});
 
-  const lastOperatorRef = useRef(null);
-
   const answeredRef = useRef(false);
 
   const backLevel = isLevel3 ? 3 : isLevel2 ? 2 : 1;
@@ -61,42 +59,7 @@ export default function GamePage() {
 
   const stage1PoolRef = useRef([]);
   const stage2PoolRef = useRef([]);
-  const stage3PoolRef = useRef([]);
   const stage1Questions = [];
-
-  // ====================
-  // 个位数加法
-  // ====================
-
-  for (let a = 1; a <= 9; a++) {
-    for (let b = 1; b <= 9; b++) {
-      const answer = a + b;
-
-      if (answer >= 1 && answer <= 9) {
-        stage1Questions.push({
-          text: `${a} + ${b}`,
-          answer,
-        });
-      }
-    }
-  }
-
-  // ====================
-  // 个位数减法
-  // ====================
-
-  for (let a = 1; a <= 9; a++) {
-    for (let b = 1; b <= 9; b++) {
-      const answer = a - b;
-
-      if (answer >= 1 && answer <= 9) {
-        stage1Questions.push({
-          text: `${a} - ${b}`,
-          answer,
-        });
-      }
-    }
-  }
 
   const stage2Questions = [];
 
@@ -149,58 +112,34 @@ export default function GamePage() {
     }
   }
 
-  const stage3Questions = [];
-
   // ====================
-  // 两位数减两位数
-  // 答案 1~9
+  // 个位数加法
   // ====================
 
-  for (let a = 10; a <= 99; a++) {
-    for (let b = 10; b <= 99; b++) {
+  for (let a = 1; a <= 9; a++) {
+    for (let b = 1; b <= 9; b++) {
+      const answer = a + b;
+
+      if (answer >= 1 && answer <= 9) {
+        stage1Questions.push({
+          text: `${a} + ${b}`,
+          answer,
+        });
+      }
+    }
+  }
+
+  // ====================
+  // 个位数减法
+  // ====================
+
+  for (let a = 1; a <= 9; a++) {
+    for (let b = 1; b <= 9; b++) {
       const answer = a - b;
 
       if (answer >= 1 && answer <= 9) {
-        stage3Questions.push({
+        stage1Questions.push({
           text: `${a} - ${b}`,
-          answer,
-        });
-      }
-    }
-  }
-
-  // ====================
-  // 两位数 ÷ 两位数
-  // 答案 1~9
-  // ====================
-
-  for (let b = 10; b <= 99; b++) {
-    for (let answer = 1; answer <= 9; answer++) {
-      const a = b * answer;
-
-      // 必须保持两位数
-      if (a >= 10 && a <= 99) {
-        stage3Questions.push({
-          text: `${a} ÷ ${b}`,
-          answer,
-        });
-      }
-    }
-  }
-
-  // ====================
-  // 三位数 ÷ 两位数
-  // 答案 1~9
-  // ====================
-
-  for (let b = 10; b <= 99; b++) {
-    for (let answer = 1; answer <= 9; answer++) {
-      const a = b * answer;
-
-      // 必须保持三位数
-      if (a >= 100 && a <= 250) {
-        stage3Questions.push({
-          text: `${a} ÷ ${b}`,
           answer,
         });
       }
@@ -219,200 +158,155 @@ export default function GamePage() {
 
     return newArray;
   }
-  function generateQuestion(
-    prevText = "",
-    currentStage = 1,
-    recentQuestions = [],
-  ) {
+  function generateQuestion(currentStage = 1) {
     let text, answer;
 
-    do {
-      // 先随机答案（1~9平均）
-      answer = Math.floor(Math.random() * 9) + 1;
+    // 先随机答案（1~9平均）
+    answer = Math.floor(Math.random() * 9) + 1;
 
-      // 第一阶段：固定题库
-      if (currentStage === 1) {
-        // 如果池子空了，重新洗牌
-        if (stage1PoolRef.current.length === 0) {
+    // 第一阶段：固定题库
+    if (currentStage === 1) {
+      // 如果池子空了，重新洗牌
+      if (stage1PoolRef.current.length === 0) {
+        stage1PoolRef.current = shuffleArray(stage1Questions);
+      }
+
+      let randomQuestion;
+
+      do {
+        randomQuestion = stage1PoolRef.current.pop();
+
+        // 池子空了重新洗牌
+        if (!randomQuestion) {
           stage1PoolRef.current = shuffleArray(stage1Questions);
-        }
 
-        let randomQuestion;
-
-        do {
           randomQuestion = stage1PoolRef.current.pop();
+        }
+      } while (
+        history.length >= 2 &&
+        history[history.length - 1].answer === randomQuestion.answer &&
+        history[history.length - 2].answer === randomQuestion.answer
+      );
 
-          // 池子空了重新洗牌
-          if (!randomQuestion) {
-            stage1PoolRef.current = shuffleArray(stage1Questions);
+      text = randomQuestion.text;
 
-            randomQuestion = stage1PoolRef.current.pop();
-          }
-        } while (
-          history.length >= 2 &&
-          history[history.length - 1].answer === randomQuestion.answer &&
-          history[history.length - 2].answer === randomQuestion.answer
-        );
+      answer = randomQuestion.answer;
 
-        text = randomQuestion.text;
+      return {
+        text,
+        answer,
+      };
+    }
 
-        answer = randomQuestion.answer;
+    // 第二阶段：20% 混入第一阶段
+    else if (currentStage === 2) {
+      let randomQuestion;
 
-        return {
-          text,
-          answer,
-        };
-      }
+      do {
+        // 池子空了重新洗牌
+        if (stage2PoolRef.current.length === 0) {
+          const mixedQuestions = [
+            ...stage2Questions,
 
-      // 第二阶段：20% 混入第一阶段
-      else if (currentStage === 2) {
-        let randomQuestion;
+            ...stage1Questions.slice(
+              0,
+              Math.floor(stage2Questions.length * 0.2),
+            ),
+          ];
 
-        do {
-          // 池子空了重新洗牌
-          if (stage2PoolRef.current.length === 0) {
-            const mixedQuestions = [
-              ...stage2Questions,
-
-              ...stage1Questions.slice(
-                0,
-                Math.floor(stage2Questions.length * 0.2),
-              ),
-            ];
-
-            stage2PoolRef.current = shuffleArray(mixedQuestions);
-          }
-
-          randomQuestion = stage2PoolRef.current.pop();
-        } while (
-          history.length >= 2 &&
-          history[history.length - 1].answer === randomQuestion.answer &&
-          history[history.length - 2].answer === randomQuestion.answer
-        );
-
-        text = randomQuestion.text;
-
-        answer = randomQuestion.answer;
-
-        return {
-          text,
-          answer,
-        };
-      }
-
-      // 第三阶段：20% 混入前两阶段
-      else {
-        let randomQuestion;
-
-        do {
-          // 池子空了重新洗牌
-          if (stage3PoolRef.current.length === 0) {
-            const mixedQuestions = [
-              ...stage3Questions,
-
-              ...stage2Questions.slice(
-                0,
-                Math.floor(stage3Questions.length * 0.1),
-              ),
-
-              ...stage1Questions.slice(
-                0,
-                Math.floor(stage3Questions.length * 0.1),
-              ),
-            ];
-
-            stage3PoolRef.current = shuffleArray(mixedQuestions);
-          }
-
-          randomQuestion = stage3PoolRef.current.pop();
-        } while (
-          history.length >= 2 &&
-          history[history.length - 1].answer === randomQuestion.answer &&
-          history[history.length - 2].answer === randomQuestion.answer
-        );
-
-        text = randomQuestion.text;
-
-        answer = randomQuestion.answer;
-
-        return {
-          text,
-          answer,
-        };
-      }
-
-      let a, b;
-
-      // 加法
-      if (mode === "plus") {
-        a = Math.floor(Math.random() * answer) + 1;
-
-        b = answer - a;
-
-        // 防止0
-        if (b === 0) {
-          b = 1;
-          a = answer - 1;
+          stage2PoolRef.current = shuffleArray(mixedQuestions);
         }
 
-        text = `${a} + ${b}`;
-        lastOperatorRef.current = "+";
-      } else if (mode === "minus") {
-        // 减法
-        b = Math.floor(Math.random() * (10 - answer));
+        randomQuestion = stage2PoolRef.current.pop();
+      } while (
+        history.length >= 2 &&
+        history[history.length - 1].answer === randomQuestion.answer &&
+        history[history.length - 2].answer === randomQuestion.answer
+      );
 
-        a = answer + b;
+      text = randomQuestion.text;
 
-        // 防止两位数
-        if (a > 9) {
-          a = 9;
-          b = a - answer;
+      answer = randomQuestion.answer;
+
+      return {
+        text,
+        answer,
+      };
+    }
+
+    // 第三阶段：实时生成
+    else {
+      let randomQuestion;
+
+      do {
+        const randomType = Math.random();
+
+        // ====================
+        // 两位数减法
+        // ====================
+        if (randomType < 0.45) {
+          const answer = Math.floor(Math.random() * 9) + 1;
+
+          const b = Math.floor(Math.random() * 90) + 10;
+
+          const a = b + answer;
+
+          if (a <= 99) {
+            randomQuestion = {
+              text: `${a} - ${b}`,
+              answer,
+            };
+          }
         }
 
-        text = `${a} - ${b}`;
-        lastOperatorRef.current = "-";
-      }
+        // ====================
+        // 两位数除法
+        // ====================
+        else if (randomType < 0.75) {
+          const answer = Math.floor(Math.random() * 9) + 1;
 
-      // 乘法
-      else if (mode === "multiply") {
-        a = Math.floor(Math.random() * 9) + 1;
+          const b = Math.floor(Math.random() * 90) + 10;
 
-        b = Math.floor(Math.random() * 3) + 1;
+          const a = b * answer;
 
-        answer = a * b;
-
-        // 保证结果1~9
-        if (answer > 9) {
-          return generateQuestion(prevText, currentStage, recentQuestions);
+          if (a >= 10 && a <= 99) {
+            randomQuestion = {
+              text: `${a} ÷ ${b}`,
+              answer,
+            };
+          }
         }
 
-        text = `${a} × ${b}`;
-      }
+        // ====================
+        // 三位数除法
+        // ====================
+        else {
+          const answer = Math.floor(Math.random() * 9) + 1;
 
-      // 除法
-      else if (mode === "divide") {
-        b = Math.floor(Math.random() * 8) + 1;
+          const b = Math.floor(Math.random() * 90) + 10;
 
-        answer = Math.floor(Math.random() * 9) + 1;
+          const a = b * answer;
 
-        a = b * answer;
+          if (a >= 100 && a <= 250) {
+            randomQuestion = {
+              text: `${a} ÷ ${b}`,
+              answer,
+            };
+          }
+        }
+      } while (
+        !randomQuestion ||
+        (history.length >= 2 &&
+          history[history.length - 1].answer === randomQuestion.answer &&
+          history[history.length - 2].answer === randomQuestion.answer)
+      );
 
-        text = `${a} ÷ ${b}`;
-      }
-    } while (text === prevText);
-
-    return {
-      text,
-      answer,
-    };
+      return randomQuestion;
+    }
   }
   // 下一题
   function nextQuestion(currentHistory) {
-    const next = generateQuestion(
-      question?.text,
-      stage,
-      history.map((q) => q.text),
-    );
+    const next = generateQuestion(stage);
 
     setQuestion(next);
 
@@ -730,7 +624,7 @@ export default function GamePage() {
     flex-col
     items-center
     justify-center
-    px-5
+    px-6
     py-4
     overflow-hidden
     select-none
@@ -894,7 +788,7 @@ export default function GamePage() {
 
               setLevel2IntroStep(1);
 
-              setTimeLeft((prev) => prev + 60);
+              setTimeLeft((prev) => Math.min(prev + 60, 99));
             }}
             className="
         mt-14
@@ -1072,7 +966,8 @@ focus:outline-none
     py-4
 
     flex
-    items-center
+items-center
+justify-between
   `}
           >
             {/* 左边时间 */}
@@ -1080,7 +975,7 @@ focus:outline-none
               className={`
     dseg-italic
 
-    w-[170px]
+    w-[108px]
 
     text-[48px]
 
@@ -1090,7 +985,6 @@ focus:outline-none
 
     shrink-0
 
-translate-x-[-12px]
 
 ${timeLeft <= 5 ? "text-red-300 animate-pulse" : "text-[#f7f3ea]"}
   `}
@@ -1106,17 +1000,17 @@ ${timeLeft <= 5 ? "text-red-300 animate-pulse" : "text-[#f7f3ea]"}
               className="
     relative
 
-    w-[150px]
+    min-w-[120px]
 
     flex
     flex-col
     items-end
 
+    text-right
+
     h-full
 
     justify-between
-
-    ml-auto
 
     shrink-0
   "
