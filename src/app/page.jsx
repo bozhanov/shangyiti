@@ -1086,7 +1086,7 @@ ${timeLeft <= 5 ? "text-red-300 animate-pulse" : "text-[#f7f3ea]"}
     text-[#f7f3ea]
   "
                 >
-                  {score}
+                  {score >= 1000 ? Math.round(score) : score.toFixed(1)}
                 </div>
               </div>
             </div>
