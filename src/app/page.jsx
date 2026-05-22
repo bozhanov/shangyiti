@@ -1276,7 +1276,7 @@ transition
           <div className="flex flex-col items-center">
             <h1
               className={`
-    text-3xl
+    text-[clamp(2.2rem,8vw,3rem)]
     text-center
     font-bold
     tracking-[0.06em]
@@ -1375,7 +1375,7 @@ focus:outline-none
           <div className="flex flex-col items-center">
             <h1
               className={`
-    text-3xl
+    text-[clamp(2.2rem,8vw,3rem)]
     text-center
     font-bold
     tracking-[0.06em]
