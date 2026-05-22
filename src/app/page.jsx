@@ -1654,6 +1654,8 @@ max-w-full
 
     h-[160px]
 
+    -translate-y-3
+
     flex
     items-center
     justify-center
