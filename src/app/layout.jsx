@@ -2,7 +2,7 @@ import "./globals.css";
 
 export const metadata = {
   title: "上一题",
-  description: "翻一翻，总能找到点啥...",
+  description: "回答上一题的答案。",
 
   icons: {
     icon: "/favicon.png",
@@ -10,8 +10,8 @@ export const metadata = {
 
   openGraph: {
     title: "上一题",
-    description: "翻一翻，总能找到点啥...",
-    images: ["/share.png"],
+    description: "你还能记住上一题吗？",
+    images: ["/og.png"],
   },
 };
 
