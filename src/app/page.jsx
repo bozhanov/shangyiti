@@ -1757,28 +1757,30 @@ focus:outline-none
             {showUploadPrompt ? (
               <div className="text-center mt-10">
                 <div
-                  className={`text-sm font-bold mb-3 ${
+                  className={`text-base font-bold mb-3 whitespace-nowrap ${
                     isLevel4
-                      ? "text-[#111111]/50"
+                      ? "text-[#111111]"
                       : isLevel2 || isLevel3
-                        ? "text-[#f7f3ea]/50"
-                        : "text-[#2f2925]/50"
+                        ? "text-[#f7f3ea]"
+                        : "text-[#2f2925]"
                   }`}
                 >
                   需不需要我把你的成绩放进排行榜
                 </div>
                 <div
-                  className={`flex gap-6 justify-center text-sm font-bold ${
+                  className={`flex gap-6 justify-center text-base font-bold ${
                     isLevel4
-                      ? "text-[#111111]/30"
+                      ? "text-[#111111]/60"
                       : isLevel2 || isLevel3
-                        ? "text-[#f7f3ea]/30"
-                        : "text-[#2f2925]/30"
+                        ? "text-[#f7f3ea]/60"
+                        : "text-[#2f2925]/60"
                   }`}
                 >
                   <span
                     onClick={() => {
-                      let name = (prompt("请输入名字") || "").trim();
+                      const raw = prompt("请输入名字");
+                      if (raw === null) return;
+                      let name = raw.trim();
                       if (!name) name = "NO NAME";
                       name = name.toUpperCase().slice(0, 8);
                       saveScore(name, score);
@@ -1893,28 +1895,30 @@ ${patrick.className}
             {showUploadPrompt ? (
               <div className="text-center mt-10">
                 <div
-                  className={`text-sm font-bold mb-3 ${
+                  className={`text-base font-bold mb-3 whitespace-nowrap ${
                     isLevel4
-                      ? "text-[#111111]/50"
+                      ? "text-[#111111]"
                       : isLevel2 || isLevel3
-                        ? "text-[#f7f3ea]/50"
-                        : "text-[#2f2925]/50"
+                        ? "text-[#f7f3ea]"
+                        : "text-[#2f2925]"
                   }`}
                 >
                   需不需要我把你的成绩放进排行榜
                 </div>
                 <div
-                  className={`flex gap-6 justify-center text-sm font-bold ${
+                  className={`flex gap-6 justify-center text-base font-bold ${
                     isLevel4
-                      ? "text-[#111111]/30"
+                      ? "text-[#111111]/60"
                       : isLevel2 || isLevel3
-                        ? "text-[#f7f3ea]/30"
-                        : "text-[#2f2925]/30"
+                        ? "text-[#f7f3ea]/60"
+                        : "text-[#2f2925]/60"
                   }`}
                 >
                   <span
                     onClick={() => {
-                      let name = (prompt("请输入名字") || "").trim();
+                      const raw = prompt("请输入名字");
+                      if (raw === null) return;
+                      let name = raw.trim();
                       if (!name) name = "NO NAME";
                       name = name.toUpperCase().slice(0, 8);
                       saveScore(name, score);
