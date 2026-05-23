@@ -14,7 +14,7 @@ export const metadata = {
     description: "你还能记住上一题吗？",
     images: [
       {
-        url: "/og.png",
+        url: "https://shangyiti.vercel.app/og.png",
         width: 1200,
         height: 630,
         alt: "上一题 - 数学答题游戏",
@@ -26,7 +26,7 @@ export const metadata = {
     card: "summary_large_image",
     title: "上一题",
     description: "你还能记住上一题吗？",
-    images: ["/og.png"],
+    images: ["https://shangyiti.vercel.app/og.png"],
   },
 };
 
