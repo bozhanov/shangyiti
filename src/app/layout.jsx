@@ -1,7 +1,9 @@
 import "./globals.css";
 
+export const metadataBase = new URL("https://shangyiti.vercel.app");
+
 export const metadata = {
-  metadataBase: new URL("https://shangyiti.vercel.app"),
+  metadataBase,
   title: "上一题",
   description: "回答上一题的答案。",
 
@@ -12,14 +14,7 @@ export const metadata = {
   openGraph: {
     title: "上一题",
     description: "你还能记住上一题吗？",
-    images: [
-      {
-        url: "https://shangyiti.vercel.app/og.png",
-        width: 1200,
-        height: 630,
-        alt: "上一题 - 数学答题游戏",
-      },
-    ],
+    images: ["https://shangyiti.vercel.app/og.png"],
   },
 
   twitter: {
