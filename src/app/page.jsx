@@ -1490,12 +1490,6 @@ justify-center
                       score: e.score,
                     }))
                   : [];
-                  return (
-                    <div className="text-[#f7f3ea]/40 text-sm py-4 text-center">
-                      加载中...
-                    </div>
-                  );
-                }
                 if (leaderboardLoading) {
                   return (
                     <div className="text-[#f7f3ea]/40 text-sm py-4 text-center">
