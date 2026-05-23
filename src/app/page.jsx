@@ -6,7 +6,9 @@ const noto = Noto_Sans_SC({
   subsets: ["latin"],
   weight: ["400", "700"],
 });
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { supabase } from "../lib/supabase";
+import html2canvas from "html2canvas";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -43,11 +45,67 @@ export default function GamePage() {
   const [showLevel2Screen, setShowLevel2Screen] = useState(false);
 
   const [showUploadPrompt, setShowUploadPrompt] = useState(false);
+  const [leaderboardData, setLeaderboardData] = useState([]);
+  const [leaderboardLoading, setLeaderboardLoading] = useState(false);
+  const posterRef = useRef(null);
 
-  // ===== localStorage 排行榜工具 =====
+  // 成绩分享图
+  const generateShareImage = useCallback(async () => {
+    const el = posterRef.current;
+    if (!el) return;
+    el.style.display = "flex";
+    // 等字体渲染
+    await new Promise((r) => setTimeout(r, 200));
+    const canvas = await html2canvas(el, {
+      scale: 2,
+      useCORS: true,
+      backgroundColor: "#f7f3ea",
+    });
+    el.style.display = "none";
+    const link = document.createElement("a");
+    link.download = `shangyiti_${score}.png`;
+    link.href = canvas.toDataURL("image/png");
+    link.click();
+  }, [score]);
+
+  // 排行榜数据加载
+  useEffect(() => {
+    if (screen === "leaderboard" && leaderboardTab === "历史") {
+      setLeaderboardLoading(true);
+      getLeaderboard().then((data) => {
+        setLeaderboardData(data);
+        setLeaderboardLoading(false);
+      });
+    }
+  }, [screen, leaderboardTab]);
+
+  // ===== Supabase + localStorage 排行榜工具 =====
   const LS_KEY = "mathgame_leaderboard";
 
-  const getLeaderboard = () => {
+  const getSupabaseLeaderboard = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("leaderboard")
+        .select("name, score")
+        .order("score", { ascending: false })
+        .limit(200);
+      if (error) throw error;
+      // 同名只保留最高分
+      const seen = new Map();
+      for (const row of data) {
+        if (!seen.has(row.name) || row.score > seen.get(row.name)) {
+          seen.set(row.name, row.score);
+        }
+      }
+      return Array.from(seen, ([name, score]) => ({ name, score }))
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 50);
+    } catch {
+      return null;
+    }
+  };
+
+  const getLocalLeaderboard = () => {
     try {
       return JSON.parse(localStorage.getItem(LS_KEY)) || [];
     } catch {
@@ -55,8 +113,22 @@ export default function GamePage() {
     }
   };
 
-  const saveScore = (name, score) => {
-    const list = getLeaderboard();
+  const getLeaderboard = async () => {
+    const remote = await getSupabaseLeaderboard();
+    if (remote && remote.length > 0) return remote;
+    return getLocalLeaderboard();
+  };
+
+  const saveScore = async (name, score) => {
+    // 先写 Supabase
+    try {
+      const { error } = await supabase
+        .from("leaderboard")
+        .insert({ name, score });
+      if (!error) return;
+    } catch {}
+    // Fallback 到 localStorage
+    const list = getLocalLeaderboard();
     const existing = list.find((e) => e.name === name);
     if (existing) {
       if (score > existing.score) existing.score = score;
@@ -1368,9 +1440,9 @@ justify-center
           <div className="flex flex-col items-center text-center px-6 w-full min-h-dvh justify-between">
             <div className="flex-1 flex items-center justify-center">
               <div className="text-3xl font-bold leading-snug whitespace-nowrap">
-                这游戏...
+                都这游戏了...
                 <br />
-                你还想设置些啥？
+                还有啥好设置的？
               </div>
             </div>
 
@@ -1413,11 +1485,13 @@ justify-center
               {(() => {
                 const data =
                   leaderboardTab === "历史"
-                    ? getLeaderboard().map((e, i) => ({
-                        rank: i + 1,
-                        name: e.name,
-                        score: e.score,
-                      }))
+                    ? Array.isArray(leaderboardData)
+                      ? leaderboardData.map((e, i) => ({
+                          rank: i + 1,
+                          name: e.name,
+                          score: e.score,
+                        }))
+                      : []
                     : [
                         { rank: 1, name: "NO NAME", score: 5000 },
                         { rank: 2, name: "AAA", score: 4820 },
@@ -1430,6 +1504,13 @@ justify-center
                         { rank: 9, name: "ACE", score: 3280 },
                         { rank: 10, name: "ECHO", score: 3010 },
                       ];
+                if (leaderboardTab === "历史" && leaderboardLoading) {
+                  return (
+                    <div className="text-[#f7f3ea]/40 text-sm py-4 text-center">
+                      加载中...
+                    </div>
+                  );
+                }
                 if (data.length === 0 && leaderboardTab === "历史") {
                   return (
                     <div className="text-[#f7f3ea]/40 text-sm py-4 text-center">
@@ -1546,8 +1627,8 @@ justify-center
           </div>
         ) : screen === "game" && showLevel2Screen ? (
           <div className="flex flex-col items-center justify-center text-center px-6 w-full min-h-dvh">
-          <div
-            className="
+            <div
+              className="
     flex
     flex-col
     items-center
@@ -1555,9 +1636,9 @@ justify-center
     gap-8
     px-6
   "
-          >
-            <div
-              className={`
+            >
+              <div
+                className={`
         text-3xl
         font-bold
         tracking-[0.06em]
@@ -1565,30 +1646,30 @@ justify-center
         leading-[1.35]
         ${isLevel4 ? "text-[#111111]" : "text-[#f7f3ea]"}
       `}
-            >
-              {isLevel4 ? (
-                <>
-                  最后一关
-                  <br />
-                  你可别哭
-                </>
-              ) : isLevel3 ? (
-                <>
-                  看样子
-                  <br />
-                  得来真格的了
-                </>
-              ) : (
-                <>
-                  没意思
-                  <br />
-                  那第二关吧
-                </>
-              )}
-            </div>
+              >
+                {isLevel4 ? (
+                  <>
+                    最后一关
+                    <br />
+                    你可别哭
+                  </>
+                ) : isLevel3 ? (
+                  <>
+                    看样子
+                    <br />
+                    得来真格的了
+                  </>
+                ) : (
+                  <>
+                    没意思
+                    <br />
+                    那第二关吧
+                  </>
+                )}
+              </div>
 
-            <div
-              className={`
+              <div
+                className={`
         text-lg
         opacity-70
         leading-[1.7]
@@ -1596,54 +1677,54 @@ justify-center
         text-center
         ${isLevel4 ? "text-[#555555]" : "text-[#d8d2c7]"}
       `}
-            >
-              {isLevel4 ? (
-                <>
-                  请你从第五题开始
-                  <br />
-                  回答上上上上题的答案
-                </>
-              ) : isLevel3 ? (
-                <>
-                  请你从第四题开始
-                  <br />
-                  回答上上上题的答案
-                </>
-              ) : (
-                <>
-                  请你从第三题开始
-                  <br />
-                  回答上上题的答案
-                </>
-              )}
-            </div>
+              >
+                {isLevel4 ? (
+                  <>
+                    请你从第五题开始
+                    <br />
+                    回答上上上上题的答案
+                  </>
+                ) : isLevel3 ? (
+                  <>
+                    请你从第四题开始
+                    <br />
+                    回答上上上题的答案
+                  </>
+                ) : (
+                  <>
+                    请你从第三题开始
+                    <br />
+                    回答上上题的答案
+                  </>
+                )}
+              </div>
 
-            <button
-              onClick={() => {
-                playSound("start");
+              <button
+                onClick={() => {
+                  playSound("start");
 
-                setShowLevel2Screen(false);
+                  setShowLevel2Screen(false);
 
-                setLevel2Ready(true);
+                  setLevel2Ready(true);
 
-                setStage(isLevel4 ? 4 : 1);
+                  setStage(isLevel4 ? 4 : 1);
 
-                setLevelQuestionCount(0);
+                  setLevelQuestionCount(0);
 
-                if (!isLevel3 && !isLevel4) {
-                  setIsLevel2(true);
-                }
+                  if (!isLevel3 && !isLevel4) {
+                    setIsLevel2(true);
+                  }
 
-                setLevel2IntroStep(1);
+                  setLevel2IntroStep(1);
 
-                if (isLevel4) {
-                  savedLevel4SecondsRef.current = timeLeft;
-                  setTimeLeft(60);
-                } else {
-                  setTimeLeft((prev) => prev + 60);
-                }
-              }}
-              className={`
+                  if (isLevel4) {
+                    savedLevel4SecondsRef.current = timeLeft;
+                    setTimeLeft(60);
+                  } else {
+                    setTimeLeft((prev) => prev + 60);
+                  }
+                }}
+                className={`
               outline-none
               focus:outline-none
               px-10
@@ -1661,10 +1742,10 @@ justify-center
               active:shadow-none
               transition
             `}
-            >
-              {isLevel4 ? "你来真的？" : isLevel3 ? "啊还有？！" : "来就来呗"}
-            </button>
-          </div>
+              >
+                {isLevel4 ? "你来真的？" : isLevel3 ? "啊还有？！" : "来就来呗"}
+              </button>
+            </div>
           </div>
         ) : finalClear ? (
           <div className="flex flex-col items-center">
@@ -1756,8 +1837,23 @@ focus:outline-none
               {getFinalClearText(isLevel4).button}
             </button>
 
+            <div className="text-center mt-10">
+              <span
+                onClick={generateShareImage}
+                className={`text-sm font-bold cursor-pointer select-none hover:opacity-100 ${
+                  isLevel4
+                    ? "text-[#111111]/40"
+                    : isLevel2 || isLevel3
+                      ? "text-[#f7f3ea]/40"
+                      : "text-[#2f2925]/40"
+                }`}
+              >
+                分享成绩
+              </span>
+            </div>
+
             {showUploadPrompt ? (
-              <div className="text-center mt-10">
+              <div className="text-center mt-6">
                 <div
                   className={`text-base font-bold mb-3 whitespace-nowrap ${
                     isLevel4
@@ -1895,8 +1991,23 @@ ${patrick.className}
               {getGameOverText(score, isLevel2, isLevel3, isLevel4).button}
             </button>
 
+            <div className="text-center mt-10">
+              <span
+                onClick={generateShareImage}
+                className={`text-sm font-bold cursor-pointer select-none hover:opacity-100 ${
+                  isLevel4
+                    ? "text-[#111111]/40"
+                    : isLevel2 || isLevel3
+                      ? "text-[#f7f3ea]/40"
+                      : "text-[#2f2925]/40"
+                }`}
+              >
+                分享成绩
+              </span>
+            </div>
+
             {showUploadPrompt ? (
-              <div className="text-center mt-10">
+              <div className="text-center mt-6">
                 <div
                   className={`text-base font-bold mb-3 whitespace-nowrap ${
                     isLevel4
@@ -2309,6 +2420,74 @@ focus:outline-none
             )}
           </>
         )}
+      </div>
+
+      {/* 成绩分享海报（隐藏，html2canvas 截取用） */}
+      <div
+        ref={posterRef}
+        style={{
+          display: "none",
+          position: "fixed",
+          left: "-9999px",
+          top: 0,
+          width: "600px",
+          height: "800px",
+          background: "#f7f3ea",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: "24px",
+          padding: "48px",
+          fontFamily:
+            "Inter, -apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif",
+        }}
+      >
+        <div
+          style={{
+            fontSize: "20px",
+            fontWeight: 700,
+            color: "#2f2925",
+            letterSpacing: "0.06em",
+            textAlign: "center",
+          }}
+        >
+          我在《上一题》里拿了
+        </div>
+        <div
+          className="dseg-italic"
+          style={{
+            fontSize: "120px",
+            fontWeight: "normal",
+            color: "#2f2925",
+            lineHeight: 1,
+            textAlign: "center",
+          }}
+        >
+          {score}
+        </div>
+        <div
+          style={{
+            fontSize: "18px",
+            fontWeight: 700,
+            color: "#2f2925",
+            letterSpacing: "0.06em",
+            textAlign: "center",
+            opacity: 0.6,
+          }}
+        >
+          其实不难...吧
+        </div>
+        <div
+          style={{
+            fontSize: "14px",
+            color: "#2f2925",
+            opacity: 0.35,
+            textAlign: "center",
+            marginTop: "24px",
+          }}
+        >
+          shangyiti.vercel.app
+        </div>
       </div>
     </main>
   );
