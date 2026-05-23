@@ -6,9 +6,8 @@ const noto = Noto_Sans_SC({
   subsets: ["latin"],
   weight: ["400", "700"],
 });
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
-import html2canvas from "html2canvas";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -47,26 +46,6 @@ export default function GamePage() {
   const [showUploadPrompt, setShowUploadPrompt] = useState(false);
   const [leaderboardData, setLeaderboardData] = useState([]);
   const [leaderboardLoading, setLeaderboardLoading] = useState(false);
-  const posterRef = useRef(null);
-
-  // 成绩分享图
-  const generateShareImage = useCallback(async () => {
-    const el = posterRef.current;
-    if (!el) return;
-    el.style.display = "flex";
-    // 等字体渲染
-    await new Promise((r) => setTimeout(r, 200));
-    const canvas = await html2canvas(el, {
-      scale: 2,
-      useCORS: true,
-      backgroundColor: "#f7f3ea",
-    });
-    el.style.display = "none";
-    const link = document.createElement("a");
-    link.download = `shangyiti_${score}.png`;
-    link.href = canvas.toDataURL("image/png");
-    link.click();
-  }, [score]);
 
   // 排行榜数据加载
   useEffect(() => {
@@ -1837,21 +1816,6 @@ focus:outline-none
               {getFinalClearText(isLevel4).button}
             </button>
 
-            <div className="text-center mt-10">
-              <span
-                onClick={generateShareImage}
-                className={`text-sm font-bold cursor-pointer select-none hover:opacity-100 ${
-                  isLevel4
-                    ? "text-[#111111]/40"
-                    : isLevel2 || isLevel3
-                      ? "text-[#f7f3ea]/40"
-                      : "text-[#2f2925]/40"
-                }`}
-              >
-                分享成绩
-              </span>
-            </div>
-
             {showUploadPrompt ? (
               <div className="text-center mt-6">
                 <div
@@ -1990,21 +1954,6 @@ ${patrick.className}
             >
               {getGameOverText(score, isLevel2, isLevel3, isLevel4).button}
             </button>
-
-            <div className="text-center mt-10">
-              <span
-                onClick={generateShareImage}
-                className={`text-sm font-bold cursor-pointer select-none hover:opacity-100 ${
-                  isLevel4
-                    ? "text-[#111111]/40"
-                    : isLevel2 || isLevel3
-                      ? "text-[#f7f3ea]/40"
-                      : "text-[#2f2925]/40"
-                }`}
-              >
-                分享成绩
-              </span>
-            </div>
 
             {showUploadPrompt ? (
               <div className="text-center mt-6">
@@ -2420,74 +2369,6 @@ focus:outline-none
             )}
           </>
         )}
-      </div>
-
-      {/* 成绩分享海报（隐藏，html2canvas 截取用） */}
-      <div
-        ref={posterRef}
-        style={{
-          display: "none",
-          position: "fixed",
-          left: "-9999px",
-          top: 0,
-          width: "600px",
-          height: "800px",
-          background: "#f7f3ea",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          gap: "24px",
-          padding: "48px",
-          fontFamily:
-            "Inter, -apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif",
-        }}
-      >
-        <div
-          style={{
-            fontSize: "20px",
-            fontWeight: 700,
-            color: "#2f2925",
-            letterSpacing: "0.06em",
-            textAlign: "center",
-          }}
-        >
-          我在《上一题》里拿了
-        </div>
-        <div
-          className="dseg-italic"
-          style={{
-            fontSize: "120px",
-            fontWeight: "normal",
-            color: "#2f2925",
-            lineHeight: 1,
-            textAlign: "center",
-          }}
-        >
-          {score}
-        </div>
-        <div
-          style={{
-            fontSize: "18px",
-            fontWeight: 700,
-            color: "#2f2925",
-            letterSpacing: "0.06em",
-            textAlign: "center",
-            opacity: 0.6,
-          }}
-        >
-          其实不难...吧
-        </div>
-        <div
-          style={{
-            fontSize: "14px",
-            color: "#2f2925",
-            opacity: 0.35,
-            textAlign: "center",
-            marginTop: "24px",
-          }}
-        >
-          shangyiti.vercel.app
-        </div>
       </div>
     </main>
   );
