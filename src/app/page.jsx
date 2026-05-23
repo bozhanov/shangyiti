@@ -1473,8 +1473,8 @@ justify-center
             </button>
           </div>
         ) : screen === "game" && showStartScreen ? (
-          <div className="flex flex-col items-center text-center px-6 w-full min-h-dvh justify-between">
-            <div className="flex-1 flex flex-col items-center justify-center">
+          <div className="flex flex-col items-center justify-center text-center px-6 w-full min-h-dvh relative">
+            <div className="flex flex-col items-center justify-center">
               <div className="text-3xl font-bold tracking-[0.06em] text-center mb-6">
                 三年级的数学考试
               </div>
@@ -1532,19 +1532,20 @@ justify-center
             <button
               onClick={() => setScreen("home")}
               className="
+                absolute bottom-8
                 w-16 h-16 rounded-full
                 bg-[#f7f3ea] text-[#2f2925]
                 shadow-[0_4px_12px_rgba(0,0,0,0.18)]
                 text-sm font-bold
                 active:scale-95
                 transition
-                mb-8
               "
             >
               首页
             </button>
           </div>
         ) : screen === "game" && showLevel2Screen ? (
+          <div className="flex flex-col items-center justify-center text-center px-6 w-full min-h-dvh">
           <div
             className="
     flex
@@ -1663,6 +1664,7 @@ justify-center
             >
               {isLevel4 ? "你来真的？" : isLevel3 ? "啊还有？！" : "来就来呗"}
             </button>
+          </div>
           </div>
         ) : finalClear ? (
           <div className="flex flex-col items-center">
@@ -1790,6 +1792,7 @@ focus:outline-none
                   >
                     好耶
                   </span>
+                  <span className="select-none">/</span>
                   <span
                     onClick={() => setShowUploadPrompt(false)}
                     className="cursor-pointer select-none hover:opacity-100"
@@ -1928,6 +1931,7 @@ ${patrick.className}
                   >
                     好耶
                   </span>
+                  <span className="select-none">/</span>
                   <span
                     onClick={() => setShowUploadPrompt(false)}
                     className="cursor-pointer select-none hover:opacity-100"
@@ -2108,10 +2112,11 @@ max-w-full
             >
               <div
                 className={`
-      ${stage === 4 ? "text-[clamp(42px,10vw,60px)]" : "text-[clamp(56px,13vw,74px)]"}
+      ${stage === 4 ? "text-[clamp(32px,9vw,48px)]" : "text-[clamp(56px,13vw,74px)]"}
       font-bold
       tabular-nums
       tracking-tighter
+      ${inter.className}
 
       ${isLevel4 ? "text-[#111111]" : isLevel2 || isLevel3 ? "text-[#1b2430]" : "text-[#f7f3ea]"}
     `}
@@ -2267,8 +2272,9 @@ focus:outline-none
                       w-20
             h-20
             rounded-md
-            text-5xl
+            text-[42px]
             font-bold
+            ${inter.className}
             transition
             duration-75
             active:scale-90
