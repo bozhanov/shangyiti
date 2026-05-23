@@ -49,23 +49,44 @@ export default function GamePage() {
 
   // 排行榜数据加载
   useEffect(() => {
-    if (screen === "leaderboard" && leaderboardTab === "历史") {
+    if (screen === "leaderboard") {
       setLeaderboardLoading(true);
-      getLeaderboard().then((data) => {
-        setLeaderboardData(data);
-        setLeaderboardLoading(false);
-      });
+      let days = null;
+      if (leaderboardTab === "周榜") days = 7;
+      else if (leaderboardTab === "月榜") days = 30;
+
+      if (days) {
+        // 周榜/月榜：仅 Supabase
+        getSupabaseLeaderboard(days).then((data) => {
+          setLeaderboardData(data || []);
+          setLeaderboardLoading(false);
+        });
+      } else {
+        // 历史榜：Supabase + localStorage fallback
+        getLeaderboard().then((data) => {
+          setLeaderboardData(data);
+          setLeaderboardLoading(false);
+        });
+      }
     }
   }, [screen, leaderboardTab]);
 
   // ===== Supabase + localStorage 排行榜工具 =====
   const LS_KEY = "mathgame_leaderboard";
 
-  const getSupabaseLeaderboard = async () => {
+  const getSupabaseLeaderboard = async (days) => {
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from("leaderboard")
-        .select("name, score")
+        .select("name, score");
+
+      if (days) {
+        const since = new Date();
+        since.setDate(since.getDate() - days);
+        query = query.gte("created_at", since.toISOString());
+      }
+
+      const { data, error } = await query
         .order("score", { ascending: false })
         .limit(200);
       if (error) throw error;
