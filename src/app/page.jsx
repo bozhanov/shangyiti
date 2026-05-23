@@ -1,6 +1,11 @@
 "use client";
 
-import { Inter, Patrick_Hand } from "next/font/google";
+import { Inter, Patrick_Hand, Noto_Sans_SC } from "next/font/google";
+
+const noto = Noto_Sans_SC({
+  subsets: ["latin"],
+  weight: ["400", "700"],
+});
 import { useEffect, useRef, useState } from "react";
 
 const inter = Inter({
@@ -29,10 +34,38 @@ export default function GamePage() {
 
   const [finalClear, setFinalClear] = useState(false);
 
+  const [screen, setScreen] = useState("home");
+
+  const [leaderboardTab, setLeaderboardTab] = useState("历史");
+
   const [showStartScreen, setShowStartScreen] = useState(true);
 
   const [showLevel2Screen, setShowLevel2Screen] = useState(false);
 
+  const [showUploadPrompt, setShowUploadPrompt] = useState(false);
+
+  // ===== localStorage 排行榜工具 =====
+  const LS_KEY = "mathgame_leaderboard";
+
+  const getLeaderboard = () => {
+    try {
+      return JSON.parse(localStorage.getItem(LS_KEY)) || [];
+    } catch {
+      return [];
+    }
+  };
+
+  const saveScore = (name, score) => {
+    const list = getLeaderboard();
+    const existing = list.find((e) => e.name === name);
+    if (existing) {
+      if (score > existing.score) existing.score = score;
+    } else {
+      list.push({ name, score });
+    }
+    list.sort((a, b) => b.score - a.score);
+    localStorage.setItem(LS_KEY, JSON.stringify(list.slice(0, 50)));
+  };
   const [level2Ready, setLevel2Ready] = useState(false);
 
   const [isLevel2, setIsLevel2] = useState(false);
@@ -54,6 +87,8 @@ export default function GamePage() {
   const answeredRef = useRef(false);
 
   const backLevel = isLevel4 ? 4 : isLevel3 ? 3 : isLevel2 ? 2 : 1;
+
+  const savedLevel4SecondsRef = useRef(0);
 
   const [stage, setStage] = useState(1);
 
@@ -708,6 +743,8 @@ export default function GamePage() {
 
     setFinalClear(false);
 
+    setShowUploadPrompt(false);
+
     setFlash("");
 
     setStage(1);
@@ -756,6 +793,148 @@ export default function GamePage() {
 
     source.start(0);
   }
+
+  useEffect(() => {
+    // 线上自动关闭
+    if (process.env.NODE_ENV !== "development") return;
+
+    function handleDebugKey(e) {
+      const key = e.key.toLowerCase();
+
+      // K = 立即死亡
+      if (key === "k") {
+        setGameOver(true);
+        setShowUploadPrompt(true);
+      }
+
+      // L = 最终通关
+      if (key === "l") {
+        setScore(5000);
+        setFinalClear(true);
+        setShowUploadPrompt(true);
+      }
+
+      // P = +50分
+      if (key === "p") {
+        setScore((prev) => prev + 50);
+      }
+
+      // 1 = 跳第一关
+      if (key === "1") {
+        setIsLevel2(false);
+        setIsLevel3(false);
+        setIsLevel4(false);
+
+        setStage(1);
+
+        setScore(0);
+
+        setShowLevel2Screen(false);
+
+        setLevel2Ready(false);
+
+        setLevelQuestionCount(0);
+
+        setTimeLeft(60);
+
+        const first = generateQuestion(1);
+
+        historyRef.current = [first];
+
+        setQuestion(first);
+
+        setHistory([first]);
+      }
+
+      // 2 = 跳第二关
+      if (key === "2") {
+        setIsLevel2(true);
+        setIsLevel3(false);
+        setIsLevel4(false);
+
+        setStage(1);
+
+        setScore(100);
+
+        setShowLevel2Screen(false);
+
+        setLevel2Ready(false);
+
+        setLevelQuestionCount(0);
+
+        setTimeLeft(60);
+
+        const first = generateQuestion(1);
+
+        historyRef.current = [first];
+
+        setQuestion(first);
+
+        setHistory([first]);
+      }
+
+      // 3 = 跳第三关
+      if (key === "3") {
+        setIsLevel2(false);
+        setIsLevel3(true);
+        setIsLevel4(false);
+
+        setStage(1);
+
+        setScore(401);
+
+        setShowLevel2Screen(false);
+
+        setLevel2Ready(false);
+
+        setLevelQuestionCount(0);
+
+        setTimeLeft(60);
+
+        const first = generateQuestion(1);
+
+        historyRef.current = [first];
+
+        setQuestion(first);
+
+        setHistory([first]);
+      }
+
+      // 4 = 跳第四关
+      if (key === "4") {
+        setIsLevel2(false);
+        setIsLevel3(false);
+        setIsLevel4(true);
+
+        setStage(4);
+
+        setScore(2000);
+
+        setShowLevel2Screen(false);
+
+        setLevel2Ready(false);
+
+        setLevelQuestionCount(0);
+
+        setTimeLeft(60);
+
+        const first = generateQuestion(4);
+
+        historyRef.current = [first];
+
+        setQuestion(first);
+
+        setHistory([first]);
+      }
+    }
+
+    window.addEventListener("keydown", handleDebugKey);
+
+    return () => {
+      window.removeEventListener("keydown", handleDebugKey);
+    };
+  }, []);
+
   function handleAnswer(num) {
     if (gameOver) return;
 
@@ -805,9 +984,14 @@ export default function GamePage() {
 
       // 第四关满5000分立即结算
       if (isLevel4 && nextScore >= 5000) {
-        const finalScore = nextScore + lives * 5 + Math.floor(timeLeft);
+        const finalScore =
+          nextScore +
+          lives * 5 +
+          savedLevel4SecondsRef.current +
+          Math.floor(timeLeft);
         setScore(finalScore);
         setFinalClear(true);
+        setShowUploadPrompt(true);
         return;
       }
 
@@ -918,14 +1102,6 @@ export default function GamePage() {
 
         playSound("wrong");
 
-        setFlash("red");
-
-        clearTimeout(flashTimeoutRef.current);
-
-        flashTimeoutRef.current = setTimeout(() => {
-          setFlash("");
-        }, 70);
-
         answeredRef.current = false;
 
         nextQuestion();
@@ -935,18 +1111,9 @@ export default function GamePage() {
 
       playSound("wrong");
 
-      setFlash("red");
-
-      clearTimeout(flashTimeoutRef.current);
-
-      flashTimeoutRef.current = setTimeout(() => {
-        setFlash("");
-      }, 70);
-
       setTimeout(() => {
-        setFlash("");
-
         setGameOver(true);
+        setShowUploadPrompt(true);
       }, 120);
     }
   }
@@ -1011,6 +1178,7 @@ export default function GamePage() {
 
     if (timeLeft <= 0) {
       setGameOver(true);
+      setShowUploadPrompt(true);
 
       return;
     }
@@ -1032,10 +1200,44 @@ export default function GamePage() {
     isLevel3,
   ]);
 
+  // 结算页文案
+  function getGameOverText(score, isLevel2, isLevel3, isLevel4) {
+    if (isLevel4) return { heading: "？？？", button: "！！！" };
+    if (isLevel3) {
+      if (score >= 750)
+        return { heading: "我害怕你...", button: "你是怪物吗？" };
+      if (score >= 700)
+        return { heading: "你的高考总成绩为", button: "清华or北大？" };
+      return { heading: "我的天", button: "能更高吗？" };
+    }
+    if (isLevel2) {
+      if (score >= 150) return { heading: "什么都不说了", button: "太秀了！" };
+      if (score >= 135)
+        return { heading: "你的高考数学成绩为", button: "只会更高！" };
+      if (score >= 101) return { heading: "已经很出色了", button: "请继续！" };
+      return { heading: "什么都不说了", button: "太优秀了！" };
+    }
+    // 第一关
+    if (score < 20)
+      return { heading: "你的三年级数学成绩为", button: "没看规则？" };
+    if (score < 60)
+      return { heading: "你的三年级数学成绩为", button: "不可能！" };
+    if (score < 80)
+      return { heading: "你的三年级数学成绩为", button: "再试试！" };
+    if (score < 90)
+      return { heading: "你的三年级数学成绩为", button: "没白读！" };
+    return { heading: "你的三年级数学成绩为", button: "先别得意！" };
+  }
+
+  function getFinalClearText(isLevel4) {
+    if (isLevel4) return { heading: "我ca", button: "想给你跪！" };
+    return { heading: "最终成绩", button: "再来一次" };
+  }
+
   return (
     <main
       className={`
-    ${inter.className}
+    ${noto.className}
 
     h-dvh
 
@@ -1051,21 +1253,19 @@ justify-center
     ease-in-out
 
     ${
-      flash === "red"
-        ? "bg-[#c85a5d]"
-        : showLevel2Screen
-          ? isLevel4
-            ? "bg-[#f5f5f5]"
-            : isLevel3
-              ? "bg-[#7d2d30]"
-              : "bg-[#1b2430]"
-          : isLevel4
-            ? "bg-[#f5f5f5]"
-            : isLevel3
-              ? "bg-[#7d2d30]"
-              : isLevel2
-                ? "bg-[#1b2430]"
-                : "bg-[#d6d0c4]"
+      showLevel2Screen
+        ? isLevel4
+          ? "bg-[#f5f5f5]"
+          : isLevel3
+            ? "bg-[#7d2d30]"
+            : "bg-[#1b2430]"
+        : isLevel4
+          ? "bg-[#f5f5f5]"
+          : isLevel3
+            ? "bg-[#7d2d30]"
+            : isLevel2
+              ? "bg-[#1b2430]"
+              : "bg-[#d6d0c4]"
     }
 
     text-[#3b302a]
@@ -1087,14 +1287,200 @@ justify-center
     mx-auto
   "
       >
-        {showStartScreen ? (
+        {screen === "home" ? (
           <div className="flex flex-col items-center text-center px-6">
-            <div className="text-3xl font-bold tracking-[0.06em] text-center mb-6">
-              三年级的数学考试
-            </div>
-
             <div
               className="
+    text-[60px]
+    font-black
+    leading-none
+    mb-14
+    text-[#2f2925]
+  "
+            >
+              上 一 题
+            </div>
+
+            <div className="flex flex-col gap-4 w-full max-w-[180px]">
+              <button
+                onClick={() => {
+                  startGame();
+                  setShowStartScreen(true);
+                  setScreen("game");
+                }}
+                className="
+        px-6
+        py-3
+        rounded-md
+        bg-[#f7f3ea]
+        text-[#2f2925]
+        shadow-[0_4px_0_#b8aa8a]
+        text-xl
+        font-bold
+        active:scale-95
+        active:translate-y-1
+        transition
+      "
+              >
+                开始
+              </button>
+
+              <button
+                onClick={() => setScreen("leaderboard")}
+                className="
+        px-6
+        py-3
+        rounded-md
+        bg-[#f7f3ea]
+        text-[#2f2925]
+        shadow-[0_4px_0_#b8aa8a]
+        text-xl
+        font-bold
+        active:scale-95
+        active:translate-y-1
+        transition
+      "
+              >
+                排行榜
+              </button>
+
+              <button
+                onClick={() => setScreen("settings")}
+                className="
+        px-6
+        py-3
+        rounded-md
+        bg-[#f7f3ea]
+        text-[#2f2925]
+        shadow-[0_4px_0_#b8aa8a]
+        text-xl
+        font-bold
+        active:scale-95
+        active:translate-y-1
+        transition
+      "
+              >
+                设置
+              </button>
+            </div>
+          </div>
+        ) : screen === "settings" ? (
+          <div className="flex flex-col items-center text-center px-6 w-full min-h-dvh justify-between">
+            <div className="flex-1 flex items-center justify-center">
+              <div className="text-3xl font-bold leading-snug whitespace-nowrap">
+                这游戏...
+                <br />
+                你还想设置些啥？
+              </div>
+            </div>
+
+            <button
+              onClick={() => setScreen("home")}
+              className="
+                w-16 h-16 rounded-full
+                bg-[#f7f3ea] text-[#2f2925]
+                shadow-[0_4px_12px_rgba(0,0,0,0.18)]
+                text-sm font-bold
+                active:scale-95
+                transition
+                mb-8
+              "
+            >
+              首页
+            </button>
+          </div>
+        ) : screen === "leaderboard" ? (
+          <div className="flex flex-col items-center text-center px-6 w-full min-h-dvh justify-between">
+            <div className="pt-14" />
+
+            {/* Leaderboard Panel with tabs inside */}
+            <div className="w-full max-w-[340px] bg-black/40 backdrop-blur-sm rounded-2xl px-5 py-4">
+              <div className="flex justify-center gap-5 mb-3 pb-3 border-b border-white/10">
+                {["周榜", "月榜", "历史"].map((tab) => (
+                  <span
+                    key={tab}
+                    onClick={() => setLeaderboardTab(tab)}
+                    className={`text-sm font-bold cursor-pointer select-none ${
+                      leaderboardTab === tab
+                        ? "text-[#f7f3ea]"
+                        : "text-[#f7f3ea]/40 hover:text-[#f7f3ea]/70"
+                    }`}
+                  >
+                    {tab}
+                  </span>
+                ))}
+              </div>
+              {(() => {
+                const data =
+                  leaderboardTab === "历史"
+                    ? getLeaderboard().map((e, i) => ({
+                        rank: i + 1,
+                        name: e.name,
+                        score: e.score,
+                      }))
+                    : [
+                        { rank: 1, name: "NO NAME", score: 5000 },
+                        { rank: 2, name: "AAA", score: 4820 },
+                        { rank: 3, name: "BRAIN", score: 4650 },
+                        { rank: 4, name: "M7", score: 4430 },
+                        { rank: 5, name: "KIRA", score: 4210 },
+                        { rank: 6, name: "ZEN", score: 3980 },
+                        { rank: 7, name: "MAX", score: 3750 },
+                        { rank: 8, name: "FOX", score: 3520 },
+                        { rank: 9, name: "ACE", score: 3280 },
+                        { rank: 10, name: "ECHO", score: 3010 },
+                      ];
+                if (data.length === 0 && leaderboardTab === "历史") {
+                  return (
+                    <div className="text-[#f7f3ea]/40 text-sm py-4 text-center">
+                      暂无成绩
+                    </div>
+                  );
+                }
+                return data.map((entry) => (
+                  <div
+                    key={entry.rank}
+                    className="flex items-center justify-between py-1 border-b border-white/10 last:border-b-0"
+                  >
+                    <span className="text-[#f7f3ea] text-sm font-bold w-8 text-left tabular-nums">
+                      #{entry.rank}
+                    </span>
+                    <span className="text-[#f7f3ea] text-sm font-bold tracking-wider flex-1 text-center">
+                      {entry.name}
+                    </span>
+                    <span className="dseg-italic text-[#f7f3ea] text-lg font-bold w-16 text-right tabular-nums">
+                      {entry.score}
+                    </span>
+                  </div>
+                ));
+              })()}
+            </div>
+
+            {/* 首页 button */}
+            <button
+              onClick={() => setScreen("home")}
+              className="
+                w-16 h-16 rounded-full
+                bg-[#f7f3ea] text-[#2f2925]
+                shadow-[0_4px_12px_rgba(0,0,0,0.18)]
+                text-sm font-bold
+                active:scale-95
+                transition
+                mb-8
+              "
+            >
+              首页
+            </button>
+          </div>
+        ) : screen === "game" && showStartScreen ? (
+          <div className="flex flex-col items-center text-center px-6 w-full min-h-dvh justify-between">
+            <div className="flex-1 flex flex-col items-center justify-center">
+              <div className="text-3xl font-bold tracking-[0.06em] text-center mb-6">
+                三年级的数学考试
+              </div>
+
+              <div
+                className="
       text-lg
       opacity-70
       leading-relaxed
@@ -1102,27 +1488,27 @@ justify-center
       text-center
       text-[#6b5f56]
     "
-            >
-              请你从第二题开始
-              <br />
-              回答上一题的答案
-            </div>
+              >
+                请你从第二题开始
+                <br />
+                回答上一题的答案
+              </div>
 
-            <button
-              onClick={async (e) => {
-                e.currentTarget.blur();
+              <button
+                onClick={async (e) => {
+                  e.currentTarget.blur();
 
-                if (audioContextRef.current?.state === "suspended") {
-                  await audioContextRef.current.resume();
-                }
+                  if (audioContextRef.current?.state === "suspended") {
+                    await audioContextRef.current.resume();
+                  }
 
-                playSound("start");
+                  playSound("start");
 
-                startGame();
+                  startGame();
 
-                setShowStartScreen(false);
-              }}
-              className="
+                  setShowStartScreen(false);
+                }}
+                className="
       mt-8
       outline-none
       focus:outline-none
@@ -1138,31 +1524,44 @@ justify-center
       active:translate-y-1
       transition
     "
+              >
+                这有何难
+              </button>
+            </div>
+
+            <button
+              onClick={() => setScreen("home")}
+              className="
+                w-16 h-16 rounded-full
+                bg-[#f7f3ea] text-[#2f2925]
+                shadow-[0_4px_12px_rgba(0,0,0,0.18)]
+                text-sm font-bold
+                active:scale-95
+                transition
+                mb-8
+              "
             >
-              这有何难
+              首页
             </button>
           </div>
-        ) : showLevel2Screen ? (
+        ) : screen === "game" && showLevel2Screen ? (
           <div
             className="
     flex
     flex-col
     items-center
     text-center
-
     gap-8
-
     px-6
   "
           >
             <div
               className={`
         text-3xl
-font-bold
-tracking-[0.06em]
-text-center
-leading-[1.35]
-
+        font-bold
+        tracking-[0.06em]
+        text-center
+        leading-[1.35]
         ${isLevel4 ? "text-[#111111]" : "text-[#f7f3ea]"}
       `}
             >
@@ -1189,15 +1588,11 @@ leading-[1.35]
 
             <div
               className={`
-
         text-lg
-opacity-70
-leading-[1.7]
-
+        opacity-70
+        leading-[1.7]
         tracking-[0.08em]
-
         text-center
-
         ${isLevel4 ? "text-[#555555]" : "text-[#d8d2c7]"}
       `}
             >
@@ -1241,33 +1636,30 @@ leading-[1.7]
                 setLevel2IntroStep(1);
 
                 if (isLevel4) {
+                  savedLevel4SecondsRef.current = timeLeft;
                   setTimeLeft(60);
                 } else {
-                  setTimeLeft((prev) => prev + 15);
+                  setTimeLeft((prev) => prev + 60);
                 }
               }}
               className={`
-
-outline-none
-focus:outline-none
-
-px-10
-py-4
-
-rounded-md
-
-${isLevel4 ? "bg-[#111111] text-[#ffffff]" : "bg-[#f7f3ea] text-[#1b2430]"}
-
-text-2xl
-font-bold
-
-shadow-[0_4px_0_#b8aa8a]
-
-active:translate-y-1
-active:shadow-none
-
-transition
-`}
+              outline-none
+              focus:outline-none
+              px-10
+              py-4
+              rounded-md
+              ${
+                isLevel4
+                  ? "bg-[#111111] text-[#ffffff] shadow-[0_4px_0_#444444]"
+                  : "bg-[#f7f3ea] text-[#1b2430] shadow-[0_4px_0_#b8aa8a]"
+              }
+              text-2xl
+              font-bold
+              active:scale-95
+              active:translate-y-1
+              active:shadow-none
+              transition
+            `}
             >
               {isLevel4 ? "你来真的？" : isLevel3 ? "啊还有？！" : "来就来呗"}
             </button>
@@ -1285,7 +1677,7 @@ transition
  ${isLevel4 ? "text-[#111111]" : isLevel2 || isLevel3 ? "text-[#f7f3ea]" : "text-[#2f2925]"}
   `}
             >
-              最终成绩
+              {getFinalClearText(isLevel4).heading}
             </h1>
 
             <div
@@ -1300,7 +1692,7 @@ ${patrick.className}
     min-w-[260px]
 
     text-center
-    mb-2
+    mb-6
     font-bold
 
     ${
@@ -1316,19 +1708,6 @@ ${patrick.className}
             >
               {score}
             </div>
-
-            <div
-              className="
-            w-full 
-            text-center
-            text-xl
-            opacity-100
-            mb-10
-            font-bold
-            tracking-[0.08em]
-            text-[#a63d40]
-          "
-            ></div>
 
             <button
               onClick={(e) => {
@@ -1349,18 +1728,22 @@ ${patrick.className}
                 startGame();
 
                 setShowStartScreen(true);
+
+                setScreen("home");
               }}
               className={`
             outline-none
 focus:outline-none
-          px-10
-          py-4
+          px-8
+          py-3
           rounded-md
 
-          ${isLevel4 ? "bg-[#111111] text-[#ffffff]" : "bg-[#f7f3ea] text-[#2f2925]"}
-
-          shadow-[0_4px_0_#b8aa8a]
-          text-2xl
+          ${
+            isLevel4
+              ? "bg-[#111111] text-[#ffffff] shadow-[0_4px_0_#444444]"
+              : "bg-[#f7f3ea] text-[#2f2925] shadow-[0_4px_0_#b8aa8a]"
+          }
+          text-xl
           font-bold
           text-center
           active:scale-95
@@ -1368,8 +1751,52 @@ focus:outline-none
           transition
         `}
             >
-              再来一次
+              {getFinalClearText(isLevel4).button}
             </button>
+
+            {showUploadPrompt ? (
+              <div className="text-center mt-10">
+                <div
+                  className={`text-sm font-bold mb-3 ${
+                    isLevel4
+                      ? "text-[#111111]/50"
+                      : isLevel2 || isLevel3
+                        ? "text-[#f7f3ea]/50"
+                        : "text-[#2f2925]/50"
+                  }`}
+                >
+                  需不需要我把你的成绩放进排行榜
+                </div>
+                <div
+                  className={`flex gap-6 justify-center text-sm font-bold ${
+                    isLevel4
+                      ? "text-[#111111]/30"
+                      : isLevel2 || isLevel3
+                        ? "text-[#f7f3ea]/30"
+                        : "text-[#2f2925]/30"
+                  }`}
+                >
+                  <span
+                    onClick={() => {
+                      let name = (prompt("请输入名字") || "").trim();
+                      if (!name) name = "NO NAME";
+                      name = name.toUpperCase().slice(0, 8);
+                      saveScore(name, score);
+                      setShowUploadPrompt(false);
+                    }}
+                    className="cursor-pointer select-none hover:opacity-100"
+                  >
+                    好耶
+                  </span>
+                  <span
+                    onClick={() => setShowUploadPrompt(false)}
+                    className="cursor-pointer select-none hover:opacity-100"
+                  >
+                    算了
+                  </span>
+                </div>
+              </div>
+            ) : null}
           </div>
         ) : gameOver ? (
           <div className="flex flex-col items-center">
@@ -1384,19 +1811,7 @@ focus:outline-none
  ${isLevel4 ? "text-[#111111]" : isLevel2 || isLevel3 ? "text-[#f7f3ea]" : "text-[#2f2925]"}
   `}
             >
-              {isLevel3
-                ? score >= 2000
-                  ? "你居然拿到了满分！"
-                  : score >= 700 && score <= 749
-                    ? "你的高考总成绩为"
-                    : "我害怕你..."
-                : isLevel2
-                  ? score >= 135 && score <= 149
-                    ? "你的高考数学成绩为"
-                    : score >= 101 && score <= 134
-                      ? "已经很出色了"
-                      : "什么都不说了！"
-                  : "你的三年级数学成绩为"}
+              {getGameOverText(score, isLevel2, isLevel3, isLevel4).heading}
             </h1>
 
             <div
@@ -1411,7 +1826,7 @@ ${patrick.className}
     min-w-[260px]
 
     text-center
-    mb-2
+    mb-6
     font-bold
 
     ${
@@ -1427,19 +1842,6 @@ ${patrick.className}
             >
               {score}
             </div>
-
-            <div
-              className="
-            w-full 
-            text-center
-            text-xl
-            opacity-100
-            mb-10
-            font-bold
-            tracking-[0.08em]
-            text-[#a63d40]
-          "
-            ></div>
 
             <button
               onClick={(e) => {
@@ -1458,46 +1860,79 @@ ${patrick.className}
                 startGame();
 
                 setShowStartScreen(true);
+
+                setScreen("home");
               }}
-              className="
-            outline-none
-focus:outline-none
-          px-10
-          py-4
-          rounded-md
-          bg-[#f7f3ea]
-          text-[#2f2925]
-          shadow-[0_4px_0_#b8aa8a]
-          text-2xl
-          font-bold
-          text-center
-          active:scale-95
-          active:translate-y-1
-          transition
-        "
+              className={`
+  outline-none
+  focus:outline-none
+
+  px-8
+  py-3
+  rounded-md
+
+  ${
+    isLevel4
+      ? "bg-[#111111] text-[#ffffff] shadow-[0_4px_0_#444444]"
+      : "bg-[#f7f3ea] text-[#2f2925] shadow-[0_4px_0_#b8aa8a]"
+  }
+
+  text-xl
+  font-bold
+  text-center
+
+  active:scale-95
+  active:translate-y-1
+
+  transition
+`}
             >
-              {!isLevel2 && !isLevel3
-                ? score < 20
-                  ? "没看规则？"
-                  : score < 60
-                    ? "不可能！"
-                    : score < 80
-                      ? "再试试！"
-                      : score < 90
-                        ? "没白读！"
-                        : "先别得意！"
-                : isLevel3
-                  ? score >= 2000
-                    ? "想给你跪！"
-                    : score >= 700 && score <= 749
-                      ? "清华or北大？"
-                      : "你是怪物吗？"
-                  : score >= 135 && score <= 149
-                    ? "只会更高"
-                    : score >= 101 && score <= 134
-                      ? "请继续！"
-                      : "你是神！"}
+              {getGameOverText(score, isLevel2, isLevel3, isLevel4).button}
             </button>
+
+            {showUploadPrompt ? (
+              <div className="text-center mt-10">
+                <div
+                  className={`text-sm font-bold mb-3 ${
+                    isLevel4
+                      ? "text-[#111111]/50"
+                      : isLevel2 || isLevel3
+                        ? "text-[#f7f3ea]/50"
+                        : "text-[#2f2925]/50"
+                  }`}
+                >
+                  需不需要我把你的成绩放进排行榜
+                </div>
+                <div
+                  className={`flex gap-6 justify-center text-sm font-bold ${
+                    isLevel4
+                      ? "text-[#111111]/30"
+                      : isLevel2 || isLevel3
+                        ? "text-[#f7f3ea]/30"
+                        : "text-[#2f2925]/30"
+                  }`}
+                >
+                  <span
+                    onClick={() => {
+                      let name = (prompt("请输入名字") || "").trim();
+                      if (!name) name = "NO NAME";
+                      name = name.toUpperCase().slice(0, 8);
+                      saveScore(name, score);
+                      setShowUploadPrompt(false);
+                    }}
+                    className="cursor-pointer select-none hover:opacity-100"
+                  >
+                    好耶
+                  </span>
+                  <span
+                    onClick={() => setShowUploadPrompt(false)}
+                    className="cursor-pointer select-none hover:opacity-100"
+                  >
+                    算了
+                  </span>
+                </div>
+              </div>
+            ) : null}
           </div>
         ) : (
           <>
@@ -1509,7 +1944,7 @@ focus:outline-none
 
     mb-6
 
-    ${isLevel4 ? "bg-[#ffffff]" : isLevel3 ? "bg-[#1b2430]" : "bg-[#b13f46]"}
+    ${isLevel4 ? "bg-[#111111]" : isLevel3 ? "bg-[#1b2430]" : "bg-[#b13f46]"}
 
     rounded-xl
 
@@ -1519,8 +1954,8 @@ focus:outline-none
       isLevel4
         ? "border border-[#111111]"
         : isLevel3
-          ? "border border-[#3b4c63]"
-          : "border border-[#d86a70]"
+          ? ""
+          : "border border-[#c85a5d]"
     }
 
     px-5
@@ -1547,7 +1982,13 @@ justify-between
 text-left
 
 
-${timeLeft <= 5 ? "text-red-500 animate-pulse" : isLevel4 ? "text-[#111111]" : "text-[#f7f3ea]"}
+${
+  timeLeft <= 5
+    ? "text-red-500 animate-pulse"
+    : isLevel4
+      ? "text-[#ffffff]"
+      : "text-[#f7f3ea]"
+}
   `}
               >
                 {Math.floor(timeLeft / 60)
@@ -1593,7 +2034,7 @@ ${timeLeft <= 5 ? "text-red-500 animate-pulse" : isLevel4 ? "text-[#111111]" : "
       leading-none
       whitespace-nowrap
 
-      ${isLevel4 ? "text-[#111111]" : "text-[#f7f3ea]"}
+      ${isLevel4 ? "text-[#ffffff]" : "text-[#f7f3ea]"}
     `}
                 >
                   {`LIFE×${lives}`}
@@ -1607,7 +2048,7 @@ ${timeLeft <= 5 ? "text-red-500 animate-pulse" : isLevel4 ? "text-[#111111]" : "
       leading-none
       whitespace-nowrap
 
-      ${isLevel4 ? "text-[#111111]" : "text-[#f7f3ea]"}
+      ${isLevel4 ? "text-[#ffffff]" : "text-[#f7f3ea]"}
     `}
                 >
                   SCORE
@@ -1621,7 +2062,7 @@ ${timeLeft <= 5 ? "text-red-500 animate-pulse" : isLevel4 ? "text-[#111111]" : "
       tabular-nums
       whitespace-nowrap
 
-      ${isLevel4 ? "text-[#111111]" : "text-[#f7f3ea]"}
+      ${isLevel4 ? "text-[#ffffff]" : "text-[#f7f3ea]"}
     `}
                 >
                   {score >= 1000 ? Math.round(score) : score.toFixed(1)}
@@ -1742,15 +2183,31 @@ max-w-full
 
       rounded-full
 
-      ${isLevel4 ? "bg-[#111111]" : "bg-[#f7f3ea]"}
+      ${
+        isLevel4
+          ? "bg-[#111111]"
+          : isLevel3
+            ? "bg-[#1b2430]"
+            : isLevel2
+              ? "bg-[#b13f46]"
+              : "bg-[#f7f3ea]"
+      }
 
 ${
   isLevel3
-    ? "border border-[#d7b8ff] shadow-[0_0_18px_rgba(180,120,255,0.28)]"
-    : "border border-[#ffffff88] shadow-[0_4px_12px_rgba(0,0,0,0.18)]"
+    ? "shadow-[0_2px_10px_rgba(0,0,0,0.18)]"
+    : "shadow-[0_4px_12px_rgba(0,0,0,0.18)]"
 }
 
-${isLevel4 ? "text-[#ffffff]" : "text-[#2f2925]"}
+${
+  isLevel4
+    ? "text-[#ffffff]"
+    : isLevel3
+      ? "text-[#f7f3ea]"
+      : isLevel2
+        ? "text-[#ffffff]"
+        : "text-[#2f2925]"
+}
 
       text-3xl
       font-bold
@@ -1812,14 +2269,24 @@ focus:outline-none
             duration-75
             active:scale-90
             active:translate-y-1
-            shadow-[0_4px_0_#b8aa8a]
+            ${
+              isLevel3
+                ? "shadow-[0_4px_0_#111827]"
+                : isLevel2
+                  ? "shadow-[0_4px_0_#8e2f35]"
+                  : isLevel4
+                    ? "shadow-[0_4px_0_#444444]"
+                    : "shadow-[0_4px_0_#b8aa8a]"
+            }
 
                         ${
-                          flash === "red"
-                            ? "bg-[#c85a5d] text-[#2f2925]"
-                            : isLevel4
-                              ? "bg-[#111111] text-[#ffffff]"
-                              : "bg-[#f7f3ea] text-[#2f2925]"
+                          isLevel4
+                            ? "bg-[#111111] text-[#ffffff]"
+                            : isLevel3
+                              ? "bg-[#1b2430] text-[#f7f3ea]"
+                              : isLevel2
+                                ? "bg-[#b13f46] text-[#ffffff]"
+                                : "bg-[#f7f3ea] text-[#2f2925]"
                         }
           `}
                       >
