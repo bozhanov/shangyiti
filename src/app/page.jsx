@@ -1483,35 +1483,27 @@ justify-center
                 ))}
               </div>
               {(() => {
-                const data =
-                  leaderboardTab === "历史"
-                    ? Array.isArray(leaderboardData)
-                      ? leaderboardData.map((e, i) => ({
-                          rank: i + 1,
-                          name: e.name,
-                          score: e.score,
-                        }))
-                      : []
-                    : [
-                        { rank: 1, name: "NO NAME", score: 5000 },
-                        { rank: 2, name: "AAA", score: 4820 },
-                        { rank: 3, name: "BRAIN", score: 4650 },
-                        { rank: 4, name: "M7", score: 4430 },
-                        { rank: 5, name: "KIRA", score: 4210 },
-                        { rank: 6, name: "ZEN", score: 3980 },
-                        { rank: 7, name: "MAX", score: 3750 },
-                        { rank: 8, name: "FOX", score: 3520 },
-                        { rank: 9, name: "ACE", score: 3280 },
-                        { rank: 10, name: "ECHO", score: 3010 },
-                      ];
-                if (leaderboardTab === "历史" && leaderboardLoading) {
+                const data = Array.isArray(leaderboardData)
+                  ? leaderboardData.map((e, i) => ({
+                      rank: i + 1,
+                      name: e.name,
+                      score: e.score,
+                    }))
+                  : [];
                   return (
                     <div className="text-[#f7f3ea]/40 text-sm py-4 text-center">
                       加载中...
                     </div>
                   );
                 }
-                if (data.length === 0 && leaderboardTab === "历史") {
+                if (leaderboardLoading) {
+                  return (
+                    <div className="text-[#f7f3ea]/40 text-sm py-4 text-center">
+                      加载中...
+                    </div>
+                  );
+                }
+                if (data.length === 0) {
                   return (
                     <div className="text-[#f7f3ea]/40 text-sm py-4 text-center">
                       暂无成绩
