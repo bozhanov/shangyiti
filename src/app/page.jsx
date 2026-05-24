@@ -1221,7 +1221,6 @@ export default function GamePage() {
         playSound("wrong");
 
         setFlash("wrong");
-        setTimeout(() => setFlash(""), 180);
 
         answeredRef.current = false;
 
@@ -1233,7 +1232,6 @@ export default function GamePage() {
       playSound("wrong");
 
       setFlash("wrong");
-      setTimeout(() => setFlash(""), 180);
 
       setTimeout(() => {
         setGameOver(true);
@@ -1282,6 +1280,14 @@ export default function GamePage() {
 
     return () => {};
   }, []);
+
+  // 自动清除 flash
+  useEffect(() => {
+    if (flash) {
+      const t = setTimeout(() => setFlash(""), 200);
+      return () => clearTimeout(t);
+    }
+  }, [flash]);
 
   useEffect(() => {
     if (
@@ -1400,8 +1406,8 @@ justify-center
         <div
           className="fixed inset-0 z-40 pointer-events-none"
           style={{
-            background: "rgba(220,40,40,0.065)",
-            animation: "flashWrong 180ms ease-out forwards",
+            background: "rgba(220,40,40,0.18)",
+            animation: "flashWrong 200ms ease-out forwards",
           }}
         />
       )}
