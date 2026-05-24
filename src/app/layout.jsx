@@ -1,7 +1,7 @@
 import "./globals.css";
 
 export const metadata = {
-  metadataBase: new URL("https://shangyiti.vercel.app"),
+  metadataBase: new URL("https://shangyiti.com"),
 
   title: "上一题",
   description: "回答上一题的答案。",
