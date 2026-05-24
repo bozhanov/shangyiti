@@ -1,6 +1,6 @@
 "use client";
 
-import { Inter, Patrick_Hand, Noto_Sans_SC, ZCOOL_QingKe_HuangYou } from "next/font/google";
+import { Inter, Patrick_Hand, Noto_Sans_SC } from "next/font/google";
 
 const noto = Noto_Sans_SC({
   subsets: ["latin"],
@@ -15,11 +15,6 @@ const inter = Inter({
 
 const patrick = Patrick_Hand({
   subsets: ["latin"],
-  weight: "400",
-});
-
-const zcool = ZCOOL_QingKe_HuangYou({
-  subsets: ["latin", "chinese-simplified"],
   weight: "400",
 });
 
@@ -1441,7 +1436,6 @@ justify-center
     mb-14
     text-[#2f2925]
   "
-              style={{ fontFamily: "'ZCOOL QingKe HuangYou', cursive" }}
             >
               上 一 题
             </div>
