@@ -2331,9 +2331,9 @@ focus:outline-none
                   const val = e.target.value.toUpperCase().replace(/[^A-Z0-9 ]/g, "").slice(0, 8);
                   setHsName(val);
                 }}
-                className="absolute opacity-0 p-0 border-0"
-                style={{ width: 1, height: 1, left: -100, top: -100, overflow: "hidden", position: "absolute" }}
+                className="absolute left-[-200px] top-[-200px] w-[1px] h-[1px] opacity-0 p-0 border-0 bg-transparent text-transparent"
                 onTouchStart={(e) => e.currentTarget.focus()}
+                onPointerDown={(e) => e.currentTarget.focus()}
               />
 
               <div className="mb-2">
