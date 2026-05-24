@@ -258,3 +258,15 @@ button {
 .dseg {
   font-family: "DSEG7Classic-Bold";
 }
+
+/* =========================
+   HIDE SCROLLBAR
+========================= */
+
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}

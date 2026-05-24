@@ -1513,7 +1513,7 @@ justify-center
 
             {/* Leaderboard Panel */}
             <div className="w-full max-w-[360px] bg-black/40 backdrop-blur-sm rounded-2xl px-5 py-5 flex-1 flex flex-col" style={{ maxHeight: "calc(100dvh - 120px)" }}>
-              <div className="overflow-y-auto flex-1">
+              <div className="overflow-y-auto flex-1 hide-scrollbar">
                 {leaderboardLoading ? (
                   <div className="text-[#f7f3ea]/40 text-sm py-4 text-center">
                     加载中...
@@ -1526,15 +1526,15 @@ justify-center
                   leaderboardData.slice(0, 20).map((entry, i) => (
                     <div
                       key={i}
-                      className="flex items-center justify-between py-[6px] border-b border-white/10 last:border-b-0"
+                      className="flex items-center py-[6px] border-b border-white/10 last:border-b-0"
                     >
-                      <span className="text-[#f7f3ea]/50 text-sm font-bold w-8 text-left tabular-nums">
+                      <span className="text-[#f7f3ea]/50 text-sm font-bold w-10 text-left tabular-nums shrink-0">
                         #{i + 1}
                       </span>
-                      <span className="text-[#f7f3ea] text-sm font-bold tracking-wider flex-1 text-center">
+                      <span className="text-[#f7f3ea] text-sm font-bold tracking-wider flex-1 text-left pl-3 truncate">
                         {entry.name.slice(0, 8)}
                       </span>
-                      <span className="dseg-italic text-[#f7f3ea] text-base font-bold w-24 text-right tabular-nums">
+                      <span className="dseg-italic text-[#f7f3ea] text-base font-bold w-24 text-right tabular-nums shrink-0">
                         {entry.score}
                       </span>
                     </div>
