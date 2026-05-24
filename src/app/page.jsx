@@ -1504,36 +1504,37 @@ justify-center
             </div>
           </div>
         ) : screen === "settings" ? (
-          <div className="flex flex-col items-center text-center px-6 w-full min-h-dvh justify-between">
-            <div className="flex-1 flex items-center justify-center">
-              <div className="text-3xl font-bold leading-snug whitespace-nowrap">
+          <div className="flex flex-col items-center text-center px-6 w-full min-h-dvh justify-center gap-8">
+            <div className="text-3xl font-bold leading-snug whitespace-nowrap">
                 都这游戏了...
                 <br />
                 还有啥好设置的？
-              </div>
             </div>
 
+            {/* 首页 button — 与首页按钮组完全一致 */}
             <button
               onClick={() => setScreen("home")}
               className="
-                w-16 h-16 rounded-full
-                bg-[#f7f3ea] text-[#2f2925]
-                shadow-[0_4px_12px_rgba(0,0,0,0.18)]
-                text-sm font-bold
+                px-6
+                py-3
+                rounded-md
+                bg-[#f7f3ea]
+                text-[#2f2925]
+                shadow-[0_4px_0_#b8aa8a]
+                text-xl
+                font-bold
                 active:scale-95
+                active:translate-y-1
                 transition
-                mb-8
               "
             >
               首页
             </button>
           </div>
         ) : screen === "leaderboard" ? (
-          <div className="flex flex-col items-center text-center px-6 w-full min-h-dvh justify-between">
-            <div className="pt-14" />
-
+          <div className="flex flex-col items-center text-center px-6 w-full min-h-dvh justify-center gap-6">
             {/* Leaderboard Panel */}
-            <div className="w-full max-w-[360px] bg-black/40 backdrop-blur-sm rounded-2xl px-5 py-5 flex-1 flex flex-col" style={{ maxHeight: "calc(100dvh - 120px)" }}>
+            <div className="w-full max-w-[360px] bg-black/40 backdrop-blur-sm rounded-2xl px-5 py-5 flex-1 flex flex-col" style={{ maxHeight: "calc(100dvh - 180px)" }}>
               <div className="overflow-y-auto flex-1 hide-scrollbar">
                 {leaderboardLoading ? (
                   <div className="text-[#f7f3ea]/40 text-sm py-4 text-center">
@@ -1564,7 +1565,7 @@ justify-center
               </div>
             </div>
 
-            {/* 首页 button */}
+            {/* 首页 button — 与首页按钮组完全一致 */}
             <button
               onClick={() => setScreen("home")}
               className="
@@ -1579,7 +1580,6 @@ justify-center
                 active:scale-95
                 active:translate-y-1
                 transition
-                mb-8 mt-4
               "
             >
               首页
