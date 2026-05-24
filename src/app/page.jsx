@@ -37,54 +37,44 @@ export default function GamePage() {
 
   const [screen, setScreen] = useState("home");
 
-  const [leaderboardTab, setLeaderboardTab] = useState("历史");
-
   const [showStartScreen, setShowStartScreen] = useState(true);
 
   const [showLevel2Screen, setShowLevel2Screen] = useState(false);
 
-  const [showUploadPrompt, setShowUploadPrompt] = useState(false);
   const [leaderboardData, setLeaderboardData] = useState([]);
   const [leaderboardLoading, setLeaderboardLoading] = useState(false);
 
-  // 排行榜数据加载
+  // High Score overlay
+  const [showHSOverlay, setShowHSOverlay] = useState(false);
+  const [hsName, setHsName] = useState("");
+  const overlayRef = useRef(null);
+
+  // 首页预加载排行榜
+  useEffect(() => {
+    getLeaderboard().then((data) => {
+      setLeaderboardData(data || []);
+    });
+  }, []);
+
+  // 排行榜页面切换时刷新
   useEffect(() => {
     if (screen === "leaderboard") {
       setLeaderboardLoading(true);
-      let days = null;
-      if (leaderboardTab === "周榜") days = 7;
-      else if (leaderboardTab === "月榜") days = 30;
-
-      if (days) {
-        // 周榜/月榜：仅 Supabase
-        getSupabaseLeaderboard(days).then((data) => {
-          setLeaderboardData(data || []);
-          setLeaderboardLoading(false);
-        });
-      } else {
-        // 历史榜：Supabase + localStorage fallback
-        getLeaderboard().then((data) => {
-          setLeaderboardData(data);
-          setLeaderboardLoading(false);
-        });
-      }
+      getLeaderboard().then((data) => {
+        setLeaderboardData(data || []);
+        setLeaderboardLoading(false);
+      });
     }
-  }, [screen, leaderboardTab]);
+  }, [screen]);
 
   // ===== Supabase + localStorage 排行榜工具 =====
   const LS_KEY = "mathgame_leaderboard";
 
-  const getSupabaseLeaderboard = async (days) => {
+  const getSupabaseLeaderboard = async () => {
     try {
       let query = supabase
         .from("leaderboard")
         .select("name, score");
-
-      if (days) {
-        const since = new Date();
-        since.setDate(since.getDate() - days);
-        query = query.gte("created_at", since.toISOString());
-      }
 
       const { data, error } = await query
         .order("score", { ascending: false })
@@ -93,13 +83,14 @@ export default function GamePage() {
       // 同名只保留最高分
       const seen = new Map();
       for (const row of data) {
+        if (row.name === "NO NAME") continue;
         if (!seen.has(row.name) || row.score > seen.get(row.name)) {
           seen.set(row.name, row.score);
         }
       }
       return Array.from(seen, ([name, score]) => ({ name, score }))
         .sort((a, b) => b.score - a.score)
-        .slice(0, 50);
+        .slice(0, 20);
     } catch {
       return null;
     }
@@ -116,7 +107,7 @@ export default function GamePage() {
   const getLeaderboard = async () => {
     const remote = await getSupabaseLeaderboard();
     if (remote && remote.length > 0) return remote;
-    return getLocalLeaderboard();
+    return getLocalLeaderboard().slice(0, 20);
   };
 
   const saveScore = async (name, score) => {
@@ -138,6 +129,43 @@ export default function GamePage() {
     list.sort((a, b) => b.score - a.score);
     localStorage.setItem(LS_KEY, JSON.stringify(list.slice(0, 50)));
   };
+
+  // 判断是否进入 Top20，进了就弹 overlay
+  const checkHighScore = (currentScore) => {
+    const top20 = leaderboardData.slice(0, 20);
+    const qualifies =
+      top20.length < 20 || currentScore > (top20[top20.length - 1]?.score ?? 0);
+    if (qualifies) {
+      setHsName("");
+      setShowHSOverlay(true);
+    }
+  };
+
+  // overlay 显示时自动聚焦
+  useEffect(() => {
+    if (showHSOverlay) {
+      setTimeout(() => overlayRef.current?.focus(), 100);
+    }
+  }, [showHSOverlay]);
+
+  const handleHSConfirm = async () => {
+    const name = hsName.trim() || "NO NAME";
+    const currentScore = score >= 1000 ? Math.round(score) : parseFloat(score.toFixed(1));
+    const finalName = name.toUpperCase().slice(0, 8);
+    await saveScore(finalName, currentScore);
+    const updated = await getLeaderboard();
+    if (updated) setLeaderboardData(updated);
+    setShowHSOverlay(false);
+  };
+
+  // 闪烁光标
+  const [cursorOn, setCursorOn] = useState(true);
+  useEffect(() => {
+    if (!showHSOverlay) return;
+    const timer = setInterval(() => setCursorOn(prev => !prev), 530);
+    return () => clearInterval(timer);
+  }, [showHSOverlay]);
+
   const [level2Ready, setLevel2Ready] = useState(false);
 
   const [isLevel2, setIsLevel2] = useState(false);
@@ -815,7 +843,9 @@ export default function GamePage() {
 
     setFinalClear(false);
 
-    setShowUploadPrompt(false);
+    setShowHSOverlay(false);
+
+    setHsName("");
 
     setFlash("");
 
@@ -876,14 +906,14 @@ export default function GamePage() {
       // K = 立即死亡
       if (key === "k") {
         setGameOver(true);
-        setShowUploadPrompt(true);
+        checkHighScore(score);
       }
 
       // L = 最终通关
       if (key === "l") {
         setScore(5000);
         setFinalClear(true);
-        setShowUploadPrompt(true);
+        checkHighScore(5000);
       }
 
       // P = +50分
@@ -1063,7 +1093,7 @@ export default function GamePage() {
           Math.floor(timeLeft);
         setScore(finalScore);
         setFinalClear(true);
-        setShowUploadPrompt(true);
+        checkHighScore(finalScore);
         return;
       }
 
@@ -1185,7 +1215,7 @@ export default function GamePage() {
 
       setTimeout(() => {
         setGameOver(true);
-        setShowUploadPrompt(true);
+        checkHighScore(score);
       }, 120);
     }
   }
@@ -1250,7 +1280,7 @@ export default function GamePage() {
 
     if (timeLeft <= 0) {
       setGameOver(true);
-      setShowUploadPrompt(true);
+      checkHighScore(score);
 
       return;
     }
@@ -1465,62 +1495,36 @@ justify-center
           <div className="flex flex-col items-center text-center px-6 w-full min-h-dvh justify-between">
             <div className="pt-14" />
 
-            {/* Leaderboard Panel with tabs inside */}
-            <div className="w-full max-w-[340px] bg-black/40 backdrop-blur-sm rounded-2xl px-5 py-4">
-              <div className="flex justify-center gap-5 mb-3 pb-3 border-b border-white/10">
-                {["周榜", "月榜", "历史"].map((tab) => (
-                  <span
-                    key={tab}
-                    onClick={() => setLeaderboardTab(tab)}
-                    className={`text-sm font-bold cursor-pointer select-none ${
-                      leaderboardTab === tab
-                        ? "text-[#f7f3ea]"
-                        : "text-[#f7f3ea]/40 hover:text-[#f7f3ea]/70"
-                    }`}
-                  >
-                    {tab}
-                  </span>
-                ))}
-              </div>
-              {(() => {
-                const data = Array.isArray(leaderboardData)
-                  ? leaderboardData.map((e, i) => ({
-                      rank: i + 1,
-                      name: e.name,
-                      score: e.score,
-                    }))
-                  : [];
-                if (leaderboardLoading) {
-                  return (
-                    <div className="text-[#f7f3ea]/40 text-sm py-4 text-center">
-                      加载中...
-                    </div>
-                  );
-                }
-                if (data.length === 0) {
-                  return (
-                    <div className="text-[#f7f3ea]/40 text-sm py-4 text-center">
-                      暂无成绩
-                    </div>
-                  );
-                }
-                return data.map((entry) => (
-                  <div
-                    key={entry.rank}
-                    className="flex items-center justify-between py-1 border-b border-white/10 last:border-b-0"
-                  >
-                    <span className="text-[#f7f3ea] text-sm font-bold w-8 text-left tabular-nums">
-                      #{entry.rank}
-                    </span>
-                    <span className="text-[#f7f3ea] text-sm font-bold tracking-wider flex-1 text-center">
-                      {entry.name}
-                    </span>
-                    <span className="dseg-italic text-[#f7f3ea] text-lg font-bold w-16 text-right tabular-nums">
-                      {entry.score}
-                    </span>
+            {/* Leaderboard Panel */}
+            <div className="w-full max-w-[360px] bg-black/40 backdrop-blur-sm rounded-2xl px-5 py-5 flex-1 flex flex-col" style={{ maxHeight: "calc(100dvh - 120px)" }}>
+              <div className="overflow-y-auto flex-1">
+                {leaderboardLoading ? (
+                  <div className="text-[#f7f3ea]/40 text-sm py-4 text-center">
+                    加载中...
                   </div>
-                ));
-              })()}
+                ) : leaderboardData.length === 0 ? (
+                  <div className="text-[#f7f3ea]/40 text-sm py-4 text-center">
+                    暂无成绩
+                  </div>
+                ) : (
+                  leaderboardData.slice(0, 20).map((entry, i) => (
+                    <div
+                      key={i}
+                      className="flex items-center justify-between py-[6px] border-b border-white/10 last:border-b-0"
+                    >
+                      <span className="text-[#f7f3ea]/50 text-sm font-bold w-8 text-left tabular-nums">
+                        #{i + 1}
+                      </span>
+                      <span className="text-[#f7f3ea] text-sm font-bold tracking-wider flex-1 text-center">
+                        {entry.name.slice(0, 8)}
+                      </span>
+                      <span className="dseg-italic text-[#f7f3ea] text-lg font-bold w-16 text-right tabular-nums">
+                        {entry.score}
+                      </span>
+                    </div>
+                  ))
+                )}
+              </div>
             </div>
 
             {/* 首页 button */}
@@ -1533,7 +1537,7 @@ justify-center
                 text-sm font-bold
                 active:scale-95
                 transition
-                mb-8
+                mb-8 mt-4
               "
             >
               首页
@@ -1822,53 +1826,6 @@ focus:outline-none
             >
               {getFinalClearText(isLevel4).button}
             </button>
-
-            {showUploadPrompt ? (
-              <div className="text-center mt-6">
-                <div
-                  className={`text-base font-bold mb-3 whitespace-nowrap ${
-                    isLevel4
-                      ? "text-[#111111]"
-                      : isLevel2 || isLevel3
-                        ? "text-[#f7f3ea]"
-                        : "text-[#2f2925]"
-                  }`}
-                >
-                  需不需要我把你的成绩放进排行榜
-                </div>
-                <div
-                  className={`flex gap-6 justify-center text-base font-bold ${
-                    isLevel4
-                      ? "text-[#111111]/60"
-                      : isLevel2 || isLevel3
-                        ? "text-[#f7f3ea]/60"
-                        : "text-[#2f2925]/60"
-                  }`}
-                >
-                  <span
-                    onClick={() => {
-                      const raw = prompt("请输入名字");
-                      if (raw === null) return;
-                      let name = raw.trim();
-                      if (!name) name = "NO NAME";
-                      name = name.toUpperCase().slice(0, 8);
-                      saveScore(name, score);
-                      setShowUploadPrompt(false);
-                    }}
-                    className="cursor-pointer select-none hover:opacity-100"
-                  >
-                    好耶
-                  </span>
-                  <span className="select-none">/</span>
-                  <span
-                    onClick={() => setShowUploadPrompt(false)}
-                    className="cursor-pointer select-none hover:opacity-100"
-                  >
-                    算了
-                  </span>
-                </div>
-              </div>
-            ) : null}
           </div>
         ) : gameOver ? (
           <div className="flex flex-col items-center">
@@ -1961,53 +1918,6 @@ ${patrick.className}
             >
               {getGameOverText(score, isLevel2, isLevel3, isLevel4).button}
             </button>
-
-            {showUploadPrompt ? (
-              <div className="text-center mt-6">
-                <div
-                  className={`text-base font-bold mb-3 whitespace-nowrap ${
-                    isLevel4
-                      ? "text-[#111111]"
-                      : isLevel2 || isLevel3
-                        ? "text-[#f7f3ea]"
-                        : "text-[#2f2925]"
-                  }`}
-                >
-                  需不需要我把你的成绩放进排行榜
-                </div>
-                <div
-                  className={`flex gap-6 justify-center text-base font-bold ${
-                    isLevel4
-                      ? "text-[#111111]/60"
-                      : isLevel2 || isLevel3
-                        ? "text-[#f7f3ea]/60"
-                        : "text-[#2f2925]/60"
-                  }`}
-                >
-                  <span
-                    onClick={() => {
-                      const raw = prompt("请输入名字");
-                      if (raw === null) return;
-                      let name = raw.trim();
-                      if (!name) name = "NO NAME";
-                      name = name.toUpperCase().slice(0, 8);
-                      saveScore(name, score);
-                      setShowUploadPrompt(false);
-                    }}
-                    className="cursor-pointer select-none hover:opacity-100"
-                  >
-                    好耶
-                  </span>
-                  <span className="select-none">/</span>
-                  <span
-                    onClick={() => setShowUploadPrompt(false)}
-                    className="cursor-pointer select-none hover:opacity-100"
-                  >
-                    算了
-                  </span>
-                </div>
-              </div>
-            ) : null}
           </div>
         ) : (
           <>
@@ -2377,6 +2287,119 @@ focus:outline-none
           </>
         )}
       </div>
+
+      {/* High Score Overlay */}
+      {showHSOverlay && (() => {
+        const currentScoreVal = score >= 1000 ? Math.round(score) : parseFloat(score.toFixed(1));
+        const playerRank = leaderboardData.filter(e => e.score > currentScoreVal).length + 1;
+
+        const displayRows = [];
+        if (playerRank <= 10) {
+          for (let i = 0; i < 10; i++) {
+            const rank = i + 1;
+            if (rank === playerRank) {
+              displayRows.push({ rank, name: hsName || "NO NAME", score: currentScoreVal, isPlayer: true });
+            } else {
+              const idx = rank > playerRank ? rank - 2 : rank - 1;
+              if (idx < leaderboardData.length) {
+                displayRows.push({ rank, name: leaderboardData[idx].name.slice(0, 8), score: leaderboardData[idx].score, isPlayer: false });
+              }
+            }
+          }
+        } else {
+          for (let i = 0; i < Math.min(10, leaderboardData.length); i++) {
+            displayRows.push({ rank: i + 1, name: leaderboardData[i].name.slice(0, 8), score: leaderboardData[i].score, isPlayer: false });
+          }
+          displayRows.push({ rank: 0, name: "...", score: 0, isEllipsis: true });
+          displayRows.push({ rank: playerRank, name: hsName || "NO NAME", score: currentScoreVal, isPlayer: true });
+        }
+
+        return (
+          <div
+            ref={overlayRef}
+            tabIndex={0}
+            className="fixed inset-0 z-50 flex items-center justify-center px-6 outline-none select-none"
+            style={{ background: "rgba(0,0,0,0.72)" }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                handleHSConfirm();
+                return;
+              }
+              if (e.key === "Backspace") {
+                setHsName(prev => prev.slice(0, -1));
+                return;
+              }
+              if (e.key.length === 1) {
+                const ch = e.key.toUpperCase();
+                if ((ch >= "A" && ch <= "Z") || (ch >= "0" && ch <= "9") || ch === " ") {
+                  if (hsName.length < 8) {
+                    setHsName(prev => prev + ch);
+                  }
+                }
+              }
+            }}
+          >
+            <div className="w-full max-w-[300px] bg-black/50 rounded-xl px-5 py-4">
+              <div className="text-[#f7f3ea] text-[11px] font-bold tracking-[0.2em] text-center mb-3 opacity-50">
+                新纪录
+              </div>
+
+              <div className="mb-2">
+                {displayRows.map((row, i) => {
+                  if (row.isEllipsis) {
+                    return (
+                      <div key="sep" className="text-center py-1">
+                        <span className="text-[#f7f3ea] text-xs opacity-20">· · ·</span>
+                      </div>
+                    );
+                  }
+                  return (
+                    <div
+                      key={i}
+                      className={`flex items-center justify-between py-[3px] ${
+                        row.isPlayer ? "opacity-100" : "opacity-25"
+                      }`}
+                    >
+                      <span className="text-[#f7f3ea] text-sm font-bold w-7 text-left tabular-nums">
+                        #{row.rank}
+                      </span>
+                      <span className="text-[#f7f3ea] text-sm font-bold tracking-wider flex-1 text-center">
+                        {row.isPlayer ? (
+                          <>
+                            <span className={hsName ? "" : "opacity-30"}>
+                              {row.name}
+                            </span>
+                            <span
+                              style={{ opacity: cursorOn ? 0.55 : 0, transition: "opacity 80ms" }}
+                            >
+                              ▌
+                            </span>
+                          </>
+                        ) : (
+                          row.name
+                        )}
+                      </span>
+                      <span className="dseg-italic text-[#f7f3ea] text-lg font-bold w-16 text-right tabular-nums">
+                        {row.score}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="text-center mt-1">
+                <button
+                  onClick={handleHSConfirm}
+                  className="text-[#f7f3ea] text-[10px] tracking-[0.2em] opacity-20 active:opacity-50 transition outline-none focus:outline-none"
+                >
+                  确认
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </main>
   );
 }
