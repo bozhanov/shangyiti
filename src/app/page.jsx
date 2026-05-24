@@ -1518,7 +1518,7 @@ justify-center
                       <span className="text-[#f7f3ea] text-sm font-bold tracking-wider flex-1 text-center">
                         {entry.name.slice(0, 8)}
                       </span>
-                      <span className="dseg-italic text-[#f7f3ea] text-lg font-bold w-20 text-right tabular-nums">
+                      <span className="dseg-italic text-[#f7f3ea] text-base font-bold w-24 text-right tabular-nums">
                         {entry.score}
                       </span>
                     </div>
@@ -2320,17 +2320,20 @@ focus:outline-none
             style={{ background: "rgba(0,0,0,0.72)" }}
           >
             <div className="w-full max-w-[300px] bg-black/50 rounded-xl px-5 py-4 pt-4">
+              {/* 真实可聚焦的隐藏输入框，inputMode 唤醒手机键盘 */}
               <input
                 ref={overlayRef}
                 type="text"
                 autoFocus
+                inputMode="text"
                 value={hsName}
                 onChange={(e) => {
                   const val = e.target.value.toUpperCase().replace(/[^A-Z0-9 ]/g, "").slice(0, 8);
                   setHsName(val);
                 }}
-                className="absolute opacity-0 w-0 h-0 pointer-events-none"
-                style={{ position: "absolute", left: -9999 }}
+                className="absolute opacity-0 p-0 border-0"
+                style={{ width: 1, height: 1, left: -100, top: -100, overflow: "hidden", position: "absolute" }}
+                onTouchStart={(e) => e.currentTarget.focus()}
               />
 
               <div className="mb-2">
