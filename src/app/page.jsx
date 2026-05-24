@@ -1395,7 +1395,7 @@ justify-center
             ? "bg-[#7d2d30]"
             : isLevel2
               ? "bg-[#1b2430]"
-              : "bg-[#d6d0c4]"
+              : "paper-bg"
     }
 
     text-[#3b302a]
