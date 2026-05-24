@@ -20,10 +20,40 @@ const patrick = Patrick_Hand({
 
 // 脏话过滤列表
 const BAD_WORDS = [
-  "fuck", "shit", "bitch", "asshole", "bastard", "dick", "cock", "cunt", "piss",
-  "操你", "草泥马", "草你", "艹你", "傻逼", "傻b", "傻比", "沙比",
-  "你妈逼", "你妈死", "死妈", "日你", "去死", "白痴", "智障", "弱智",
-  "婊子", "妓女", "鸡巴", "几把", "妈逼", "我操", "卧槽", "尼玛逼", "sb",
+  "fuck",
+  "shit",
+  "bitch",
+  "asshole",
+  "bastard",
+  "dick",
+  "cock",
+  "cunt",
+  "piss",
+  "操你",
+  "草泥马",
+  "草你",
+  "艹你",
+  "傻逼",
+  "傻b",
+  "傻比",
+  "沙比",
+  "你妈逼",
+  "你妈死",
+  "死妈",
+  "日你",
+  "去死",
+  "白痴",
+  "智障",
+  "弱智",
+  "婊子",
+  "妓女",
+  "鸡巴",
+  "几把",
+  "妈逼",
+  "我操",
+  "卧槽",
+  "尼玛逼",
+  "sb",
 ];
 const hasBadWord = (str) => {
   const lower = str.toLowerCase().replace(/\s/g, "");
@@ -84,9 +114,7 @@ export default function GamePage() {
 
   const getSupabaseLeaderboard = async () => {
     try {
-      let query = supabase
-        .from("leaderboard")
-        .select("name, score");
+      let query = supabase.from("leaderboard").select("name, score");
 
       const { data, error } = await query
         .order("score", { ascending: false })
@@ -167,7 +195,8 @@ export default function GamePage() {
       return;
     }
     const name = raw.slice(0, 6) || "你是谁？";
-    const currentScore = score >= 1000 ? Math.round(score) : parseFloat(score.toFixed(1));
+    const currentScore =
+      score >= 1000 ? Math.round(score) : parseFloat(score.toFixed(1));
     await saveScore(name, currentScore);
     const updated = await getLeaderboard();
     if (updated) setLeaderboardData(updated);
@@ -178,7 +207,7 @@ export default function GamePage() {
   const [cursorOn, setCursorOn] = useState(true);
   useEffect(() => {
     if (!showHSOverlay) return;
-    const timer = setInterval(() => setCursorOn(prev => !prev), 530);
+    const timer = setInterval(() => setCursorOn((prev) => !prev), 530);
     return () => clearInterval(timer);
   }, [showHSOverlay]);
 
@@ -1430,7 +1459,7 @@ justify-center
           <div className="flex flex-col items-center text-center px-6">
             <div
               className="
-    text-[60px]
+    text-[53px]
     font-black
     leading-none
     mb-14
@@ -1533,7 +1562,10 @@ justify-center
             <div className="pt-14 shrink-0" />
 
             {/* Leaderboard Panel */}
-            <div className="w-full max-w-[360px] bg-black/40 backdrop-blur-sm rounded-2xl px-5 py-5 overflow-y-auto hide-scrollbar" style={{ maxHeight: "calc(100dvh - 200px)" }}>
+            <div
+              className="w-full max-w-[360px] bg-black/40 backdrop-blur-sm rounded-2xl px-5 py-5 overflow-y-auto hide-scrollbar"
+              style={{ maxHeight: "calc(100dvh - 200px)" }}
+            >
               {leaderboardLoading ? (
                 <div className="text-[#f7f3ea]/40 text-sm py-4 text-center">
                   加载中...
@@ -2324,115 +2356,147 @@ focus:outline-none
       </div>
 
       {/* High Score Overlay */}
-      {showHSOverlay && (() => {
-        const currentScoreVal = score >= 1000 ? Math.round(score) : parseFloat(score.toFixed(1));
-        const playerRank = leaderboardData.filter(e => e.score > currentScoreVal).length + 1;
+      {showHSOverlay &&
+        (() => {
+          const currentScoreVal =
+            score >= 1000 ? Math.round(score) : parseFloat(score.toFixed(1));
+          const playerRank =
+            leaderboardData.filter((e) => e.score > currentScoreVal).length + 1;
 
-        const displayRows = [];
-        if (playerRank <= 10) {
-          for (let i = 0; i < 10; i++) {
-            const rank = i + 1;
-            if (rank === playerRank) {
-              displayRows.push({ rank, name: hsName || "你是谁？", score: currentScoreVal, isPlayer: true });
-            } else {
-              const idx = rank > playerRank ? rank - 2 : rank - 1;
-              if (idx < leaderboardData.length) {
-                displayRows.push({ rank, name: leaderboardData[idx].name.slice(0, 8), score: leaderboardData[idx].score, isPlayer: false });
+          const displayRows = [];
+          if (playerRank <= 10) {
+            for (let i = 0; i < 10; i++) {
+              const rank = i + 1;
+              if (rank === playerRank) {
+                displayRows.push({
+                  rank,
+                  name: hsName || "你是谁？",
+                  score: currentScoreVal,
+                  isPlayer: true,
+                });
+              } else {
+                const idx = rank > playerRank ? rank - 2 : rank - 1;
+                if (idx < leaderboardData.length) {
+                  displayRows.push({
+                    rank,
+                    name: leaderboardData[idx].name.slice(0, 8),
+                    score: leaderboardData[idx].score,
+                    isPlayer: false,
+                  });
+                }
               }
             }
+          } else {
+            for (let i = 0; i < Math.min(10, leaderboardData.length); i++) {
+              displayRows.push({
+                rank: i + 1,
+                name: leaderboardData[i].name.slice(0, 8),
+                score: leaderboardData[i].score,
+                isPlayer: false,
+              });
+            }
+            displayRows.push({
+              rank: 0,
+              name: "...",
+              score: 0,
+              isEllipsis: true,
+            });
+            displayRows.push({
+              rank: playerRank,
+              name: hsName || "你是谁？",
+              score: currentScoreVal,
+              isPlayer: true,
+            });
           }
-        } else {
-          for (let i = 0; i < Math.min(10, leaderboardData.length); i++) {
-            displayRows.push({ rank: i + 1, name: leaderboardData[i].name.slice(0, 8), score: leaderboardData[i].score, isPlayer: false });
-          }
-          displayRows.push({ rank: 0, name: "...", score: 0, isEllipsis: true });
-          displayRows.push({ rank: playerRank, name: hsName || "你是谁？", score: currentScoreVal, isPlayer: true });
-        }
 
-        return (
-          <div
-            className="fixed inset-0 z-50 flex items-center justify-center px-6 select-none"
-            style={{ background: "rgba(0,0,0,0.72)" }}
-          >
-            <div className="w-full max-w-[300px] bg-black/50 rounded-xl px-5 py-4 pt-4">
-              <div className="mb-2">
-                {displayRows.map((row, i) => {
-                  if (row.isEllipsis) {
+          return (
+            <div
+              className="fixed inset-0 z-50 flex items-center justify-center px-6 select-none"
+              style={{ background: "rgba(0,0,0,0.72)" }}
+            >
+              <div className="w-full max-w-[300px] bg-black/50 rounded-xl px-5 py-4 pt-4">
+                <div className="mb-2">
+                  {displayRows.map((row, i) => {
+                    if (row.isEllipsis) {
+                      return (
+                        <div key="sep" className="text-center py-1">
+                          <span className="text-[#f7f3ea] text-xs opacity-20">
+                            · · ·
+                          </span>
+                        </div>
+                      );
+                    }
                     return (
-                      <div key="sep" className="text-center py-1">
-                        <span className="text-[#f7f3ea] text-xs opacity-20">· · ·</span>
-                      </div>
-                    );
-                  }
-                  return (
-                    <div
-                      key={i}
-                      className={`flex items-center justify-between py-[3px] ${
-                        row.isPlayer ? "opacity-100" : "opacity-25"
-                      }`}
-                    >
-                      <span className="text-[#f7f3ea] text-sm font-bold w-7 text-left tabular-nums">
-                        #{row.rank}
-                      </span>
-                      {row.isPlayer ? (
-                        <input
-                          ref={overlayRef}
-                          type="text"
-                          inputMode="text"
-                          autoFocus
-                          value={hsName}
-                          placeholder="你是谁？"
-                          onChange={(e) => {
-                            const val = e.target.value.replace(/[^\u4e00-\u9fffA-Za-z0-9 ]/g, "").slice(0, 6);
-                            if (!val || !hasBadWord(val)) {
-                              setHsName(val.toUpperCase());
-                            }
-                          }}
-                          className="
+                      <div
+                        key={i}
+                        className={`flex items-center justify-between py-[3px] ${
+                          row.isPlayer ? "opacity-100" : "opacity-25"
+                        }`}
+                      >
+                        <span className="text-[#f7f3ea] text-sm font-bold w-7 text-left tabular-nums">
+                          #{row.rank}
+                        </span>
+                        {row.isPlayer ? (
+                          <input
+                            ref={overlayRef}
+                            type="text"
+                            inputMode="text"
+                            autoFocus
+                            value={hsName}
+                            placeholder="你是谁？"
+                            onChange={(e) => {
+                              const val = e.target.value
+                                .replace(/[^\u4e00-\u9fffA-Za-z0-9 ]/g, "")
+                                .slice(0, 6);
+                              if (!val || !hasBadWord(val)) {
+                                setHsName(val.toUpperCase());
+                              }
+                            }}
+                            className="
                             flex-1 bg-transparent border-0 outline-none
                             text-[#f7f3ea] text-sm font-bold tracking-wider
                             text-left pl-6 w-full p-0 m-0
                             placeholder:text-[#f7f3ea]/30
                             selection:bg-[#f7f3ea]/25
                           "
-                          style={{
-                            caretColor: cursorOn ? "#f7f3ea" : "transparent",
-                            fontFamily: "inherit",
-                          }}
-                          enterKeyHint="done"
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter") {
-                              e.preventDefault();
-                              e.currentTarget.blur();
-                              handleHSConfirm();
-                            }
-                          }}
-                        />
-                      ) : (
-                        <span className="text-[#f7f3ea] text-sm font-bold tracking-wider flex-1 text-center">
-                          {row.name}
+                            style={{
+                              caretColor: cursorOn ? "#f7f3ea" : "transparent",
+                              fontFamily: "inherit",
+                            }}
+                            enterKeyHint="done"
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") {
+                                e.preventDefault();
+                                e.currentTarget.blur();
+                                handleHSConfirm();
+                              }
+                            }}
+                          />
+                        ) : (
+                          <span className="text-[#f7f3ea] text-sm font-bold tracking-wider flex-1 text-center">
+                            {row.name}
+                          </span>
+                        )}
+                        <span className="dseg-italic text-[#f7f3ea] text-base font-bold w-24 text-right tabular-nums">
+                          {row.score}
                         </span>
-                      )}
-                      <span className="dseg-italic text-[#f7f3ea] text-base font-bold w-24 text-right tabular-nums">
-                        {row.score}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
+                      </div>
+                    );
+                  })}
+                </div>
 
-              <div className="text-center mt-1">
-                <button
-                  onClick={handleHSConfirm}
-                  className="text-[#f7f3ea] text-sm font-bold tracking-[0.2em] opacity-45 active:opacity-100 active:scale-95 transition outline-none focus:outline-none"
-                >
-                  确认
-                </button>
+                <div className="text-center mt-1">
+                  <button
+                    onClick={handleHSConfirm}
+                    className="text-[#f7f3ea] text-sm font-bold tracking-[0.2em] opacity-45 active:opacity-100 active:scale-95 transition outline-none focus:outline-none"
+                  >
+                    确认
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
-        );
-      })()}
+          );
+        })()}
     </main>
   );
 }
