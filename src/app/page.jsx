@@ -2320,22 +2320,6 @@ focus:outline-none
             style={{ background: "rgba(0,0,0,0.72)" }}
           >
             <div className="w-full max-w-[300px] bg-black/50 rounded-xl px-5 py-4 pt-4">
-              {/* 真实可聚焦的隐藏输入框，inputMode 唤醒手机键盘 */}
-              <input
-                ref={overlayRef}
-                type="text"
-                autoFocus
-                inputMode="text"
-                value={hsName}
-                onChange={(e) => {
-                  const val = e.target.value.toUpperCase().replace(/[^A-Z0-9 ]/g, "").slice(0, 8);
-                  setHsName(val);
-                }}
-                className="absolute left-[-200px] top-[-200px] w-[1px] h-[1px] opacity-0 p-0 border-0 bg-transparent text-transparent"
-                onTouchStart={(e) => e.currentTarget.focus()}
-                onPointerDown={(e) => e.currentTarget.focus()}
-              />
-
               <div className="mb-2">
                 {displayRows.map((row, i) => {
                   if (row.isEllipsis) {
@@ -2355,22 +2339,43 @@ focus:outline-none
                       <span className="text-[#f7f3ea] text-sm font-bold w-7 text-left tabular-nums">
                         #{row.rank}
                       </span>
-                      <span className="text-[#f7f3ea] text-sm font-bold tracking-wider flex-1 text-center">
-                        {row.isPlayer ? (
-                          <>
-                            <span className={hsName ? "" : "opacity-30"}>
-                              {row.name}
-                            </span>
-                            <span
-                              style={{ opacity: cursorOn ? 0.55 : 0, transition: "opacity 80ms" }}
-                            >
-                              ▌
-                            </span>
-                          </>
-                        ) : (
-                          row.name
-                        )}
-                      </span>
+                      {row.isPlayer ? (
+                        <input
+                          ref={overlayRef}
+                          type="text"
+                          inputMode="text"
+                          autoFocus
+                          value={hsName}
+                          placeholder="你是谁？"
+                          onChange={(e) => {
+                            const val = e.target.value.toUpperCase().replace(/[^A-Z0-9 ]/g, "").slice(0, 8);
+                            setHsName(val);
+                          }}
+                          className="
+                            flex-1 bg-transparent border-0 outline-none
+                            text-[#f7f3ea] text-sm font-bold tracking-wider
+                            text-center w-full p-0 m-0
+                            placeholder:text-[#f7f3ea]/30
+                            selection:bg-[#f7f3ea]/25
+                          "
+                          style={{
+                            caretColor: cursorOn ? "#f7f3ea" : "transparent",
+                            fontFamily: "inherit",
+                          }}
+                          enterKeyHint="done"
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              e.preventDefault();
+                              e.currentTarget.blur();
+                              handleHSConfirm();
+                            }
+                          }}
+                        />
+                      ) : (
+                        <span className="text-[#f7f3ea] text-sm font-bold tracking-wider flex-1 text-center">
+                          {row.name}
+                        </span>
+                      )}
                       <span className="dseg-italic text-[#f7f3ea] text-lg font-bold w-20 text-right tabular-nums">
                         {row.score}
                       </span>
