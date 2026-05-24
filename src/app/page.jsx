@@ -19,7 +19,7 @@ const patrick = Patrick_Hand({
 });
 
 const zcool = ZCOOL_QingKe_HuangYou({
-  subsets: ["latin"],
+  subsets: ["latin", "chinese-simplified"],
   weight: "400",
 });
 
@@ -1440,8 +1440,8 @@ justify-center
     leading-none
     mb-14
     text-[#2f2925]
-    ${zcool.className}
   "
+              style={{ fontFamily: "'ZCOOL QingKe HuangYou', cursive" }}
             >
               上 一 题
             </div>
