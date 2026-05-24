@@ -12,14 +12,14 @@ export const metadata = {
 
   openGraph: {
     title: "上一题",
-    description: "你还能记住上一题吗？",
+    description: "你还能记住上一题吗？上上题、上上上题呢？",
     images: ["/share.png"],
   },
 
   twitter: {
     card: "summary_large_image",
     title: "上一题",
-    description: "你还能记住上一题吗？",
+    description: "你还能记住上一题吗？上上题、上上上题呢？",
     images: ["/share.png"],
   },
 };
