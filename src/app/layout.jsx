@@ -1,9 +1,8 @@
 import "./globals.css";
 
-export const metadataBase = new URL("https://shangyiti.vercel.app");
-
 export const metadata = {
-  metadataBase,
+  metadataBase: new URL("https://shangyiti.vercel.app"),
+
   title: "上一题",
   description: "回答上一题的答案。",
 
@@ -14,14 +13,14 @@ export const metadata = {
   openGraph: {
     title: "上一题",
     description: "你还能记住上一题吗？",
-    images: ["https://shangyiti.vercel.app/share.png"],
+    images: ["/share.png"],
   },
 
   twitter: {
     card: "summary_large_image",
     title: "上一题",
     description: "你还能记住上一题吗？",
-    images: ["https://shangyiti.vercel.app/share.png"],
+    images: ["/share.png"],
   },
 };
 
