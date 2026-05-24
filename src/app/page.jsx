@@ -18,6 +18,18 @@ const patrick = Patrick_Hand({
   weight: "400",
 });
 
+// 脏话过滤列表
+const BAD_WORDS = [
+  "fuck", "shit", "bitch", "asshole", "bastard", "dick", "cock", "cunt", "piss",
+  "操你", "草泥马", "草你", "艹你", "傻逼", "傻b", "傻比", "沙比",
+  "你妈逼", "你妈死", "死妈", "日你", "去死", "白痴", "智障", "弱智",
+  "婊子", "妓女", "鸡巴", "几把", "妈逼", "我操", "卧槽", "尼玛逼", "sb",
+];
+const hasBadWord = (str) => {
+  const lower = str.toLowerCase().replace(/\s/g, "");
+  return BAD_WORDS.some((w) => lower.includes(w));
+};
+
 export default function GamePage() {
   const [question, setQuestion] = useState(null);
 
@@ -149,10 +161,14 @@ export default function GamePage() {
   }, [showHSOverlay]);
 
   const handleHSConfirm = async () => {
-    const name = hsName.trim() || "你是谁？";
+    const raw = hsName.trim();
+    if (!raw || hasBadWord(raw)) {
+      setHsName("");
+      return;
+    }
+    const name = raw.slice(0, 6) || "你是谁？";
     const currentScore = score >= 1000 ? Math.round(score) : parseFloat(score.toFixed(1));
-    const finalName = name.toUpperCase().slice(0, 8);
-    await saveScore(finalName, currentScore);
+    await saveScore(name, currentScore);
     const updated = await getLeaderboard();
     if (updated) setLeaderboardData(updated);
     setShowHSOverlay(false);
@@ -2348,13 +2364,15 @@ focus:outline-none
                           value={hsName}
                           placeholder="你是谁？"
                           onChange={(e) => {
-                            const val = e.target.value.toUpperCase().replace(/[^A-Z0-9 ]/g, "").slice(0, 8);
-                            setHsName(val);
+                            const val = e.target.value.replace(/[^\u4e00-\u9fffA-Za-z0-9 ]/g, "").slice(0, 6);
+                            if (!val || !hasBadWord(val)) {
+                              setHsName(val.toUpperCase());
+                            }
                           }}
                           className="
                             flex-1 bg-transparent border-0 outline-none
                             text-[#f7f3ea] text-sm font-bold tracking-wider
-                            text-center w-full p-0 m-0
+                            text-left pl-6 w-full p-0 m-0
                             placeholder:text-[#f7f3ea]/30
                             selection:bg-[#f7f3ea]/25
                           "
@@ -2387,7 +2405,7 @@ focus:outline-none
               <div className="text-center mt-1">
                 <button
                   onClick={handleHSConfirm}
-                  className="text-[#f7f3ea] text-sm font-bold tracking-[0.2em] opacity-40 active:opacity-70 transition outline-none focus:outline-none"
+                  className="text-[#f7f3ea] text-sm font-bold tracking-[0.2em] opacity-45 active:opacity-100 active:scale-95 transition outline-none focus:outline-none"
                 >
                   确认
                 </button>
