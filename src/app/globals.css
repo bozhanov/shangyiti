@@ -269,41 +269,6 @@ button {
 }
 
 /* =========================
-   PAPER WRINKLE BACKGROUND
-   Subtle paper texture + faint math expressions
-   Low contrast, quiet, minimal
-   Applied to: homepage (bg-[#d6d0c4])
-========================= */
-
-.paper-bg {
-  background-color: #d6d0c4;
-  background-image: url("/bg-paper.svg");
-  background-size: 500px 700px;
-  background-repeat: repeat;
-  position: relative;
-}
-
-/* Subtle paper grain overlay via pseudo-element */
-.paper-bg::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: 0;
-  opacity: 0.25;
-  mix-blend-mode: multiply;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' seed='7' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23g)' opacity='0.45'/%3E%3C/svg%3E");
-  background-size: 200px 200px;
-  background-repeat: repeat;
-}
-
-/* Ensure all direct children sit above the grain overlay */
-.paper-bg > * {
-  position: relative;
-  z-index: 1;
-}
-
-/* =========================
    HIDE SCROLLBAR
 ========================= */
 
