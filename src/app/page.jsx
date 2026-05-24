@@ -1568,11 +1568,16 @@ justify-center
             <button
               onClick={() => setScreen("home")}
               className="
-                w-16 h-16 rounded-full
-                bg-[#f7f3ea] text-[#2f2925]
-                shadow-[0_4px_12px_rgba(0,0,0,0.18)]
-                text-sm font-bold
+                px-6
+                py-3
+                rounded-md
+                bg-[#f7f3ea]
+                text-[#2f2925]
+                shadow-[0_4px_0_#b8aa8a]
+                text-xl
+                font-bold
                 active:scale-95
+                active:translate-y-1
                 transition
                 mb-8 mt-4
               "
@@ -1640,13 +1645,18 @@ justify-center
             <button
               onClick={() => setScreen("home")}
               className="
-                absolute bottom-8
-                w-16 h-16 rounded-full
-                bg-[#f7f3ea] text-[#2f2925]
-                shadow-[0_4px_12px_rgba(0,0,0,0.18)]
-                text-sm font-bold
+                px-6
+                py-3
+                rounded-md
+                bg-[#f7f3ea]
+                text-[#2f2925]
+                shadow-[0_4px_0_#b8aa8a]
+                text-xl
+                font-bold
                 active:scale-95
+                active:translate-y-1
                 transition
+                absolute bottom-8
               "
             >
               首页
