@@ -1220,6 +1220,9 @@ export default function GamePage() {
 
         playSound("wrong");
 
+        setFlash("wrong");
+        setTimeout(() => setFlash(""), 180);
+
         answeredRef.current = false;
 
         nextQuestion();
@@ -1228,6 +1231,9 @@ export default function GamePage() {
       }
 
       playSound("wrong");
+
+      setFlash("wrong");
+      setTimeout(() => setFlash(""), 180);
 
       setTimeout(() => {
         setGameOver(true);
@@ -1390,6 +1396,15 @@ justify-center
     focus:outline-none
   `}
     >
+      {flash === "wrong" && (
+        <div
+          className="fixed inset-0 z-40 pointer-events-none"
+          style={{
+            background: "rgba(220,40,40,0.065)",
+            animation: "flashWrong 180ms ease-out forwards",
+          }}
+        />
+      )}
       <div
         className="
     w-full
