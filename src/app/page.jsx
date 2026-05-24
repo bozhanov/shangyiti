@@ -149,7 +149,7 @@ export default function GamePage() {
   }, [showHSOverlay]);
 
   const handleHSConfirm = async () => {
-    const name = hsName.trim() || "NO NAME";
+    const name = hsName.trim() || "你是谁？";
     const currentScore = score >= 1000 ? Math.round(score) : parseFloat(score.toFixed(1));
     const finalName = name.toUpperCase().slice(0, 8);
     await saveScore(finalName, currentScore);
@@ -2298,7 +2298,7 @@ focus:outline-none
           for (let i = 0; i < 10; i++) {
             const rank = i + 1;
             if (rank === playerRank) {
-              displayRows.push({ rank, name: hsName || "NO NAME", score: currentScoreVal, isPlayer: true });
+              displayRows.push({ rank, name: hsName || "你是谁？", score: currentScoreVal, isPlayer: true });
             } else {
               const idx = rank > playerRank ? rank - 2 : rank - 1;
               if (idx < leaderboardData.length) {
@@ -2311,7 +2311,7 @@ focus:outline-none
             displayRows.push({ rank: i + 1, name: leaderboardData[i].name.slice(0, 8), score: leaderboardData[i].score, isPlayer: false });
           }
           displayRows.push({ rank: 0, name: "...", score: 0, isEllipsis: true });
-          displayRows.push({ rank: playerRank, name: hsName || "NO NAME", score: currentScoreVal, isPlayer: true });
+          displayRows.push({ rank: playerRank, name: hsName || "你是谁？", score: currentScoreVal, isPlayer: true });
         }
 
         return (
@@ -2391,7 +2391,7 @@ focus:outline-none
               <div className="text-center mt-1">
                 <button
                   onClick={handleHSConfirm}
-                  className="text-[#f7f3ea] text-[10px] tracking-[0.2em] opacity-20 active:opacity-50 transition outline-none focus:outline-none"
+                  className="text-[#f7f3ea] text-sm font-bold tracking-[0.2em] opacity-40 active:opacity-70 transition outline-none focus:outline-none"
                 >
                   确认
                 </button>
