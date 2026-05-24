@@ -14,14 +14,14 @@ export const metadata = {
   openGraph: {
     title: "上一题",
     description: "你还能记住上一题吗？",
-    images: ["https://shangyiti.vercel.app/og.png"],
+    images: ["https://shangyiti.vercel.app/share.png"],
   },
 
   twitter: {
     card: "summary_large_image",
     title: "上一题",
     description: "你还能记住上一题吗？",
-    images: ["https://shangyiti.vercel.app/og.png"],
+    images: ["https://shangyiti.vercel.app/share.png"],
   },
 };
 
