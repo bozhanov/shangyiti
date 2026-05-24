@@ -2376,7 +2376,7 @@ focus:outline-none
                           {row.name}
                         </span>
                       )}
-                      <span className="dseg-italic text-[#f7f3ea] text-lg font-bold w-20 text-right tabular-nums">
+                      <span className="dseg-italic text-[#f7f3ea] text-base font-bold w-24 text-right tabular-nums">
                         {row.score}
                       </span>
                     </div>
