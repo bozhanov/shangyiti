@@ -1518,7 +1518,7 @@ justify-center
                       <span className="text-[#f7f3ea] text-sm font-bold tracking-wider flex-1 text-center">
                         {entry.name.slice(0, 8)}
                       </span>
-                      <span className="dseg-italic text-[#f7f3ea] text-lg font-bold w-16 text-right tabular-nums">
+                      <span className="dseg-italic text-[#f7f3ea] text-lg font-bold w-20 text-right tabular-nums">
                         {entry.score}
                       </span>
                     </div>
@@ -2316,34 +2316,22 @@ focus:outline-none
 
         return (
           <div
-            ref={overlayRef}
-            tabIndex={0}
-            className="fixed inset-0 z-50 flex items-center justify-center px-6 outline-none select-none"
+            className="fixed inset-0 z-50 flex items-center justify-center px-6 select-none"
             style={{ background: "rgba(0,0,0,0.72)" }}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
-                handleHSConfirm();
-                return;
-              }
-              if (e.key === "Backspace") {
-                setHsName(prev => prev.slice(0, -1));
-                return;
-              }
-              if (e.key.length === 1) {
-                const ch = e.key.toUpperCase();
-                if ((ch >= "A" && ch <= "Z") || (ch >= "0" && ch <= "9") || ch === " ") {
-                  if (hsName.length < 8) {
-                    setHsName(prev => prev + ch);
-                  }
-                }
-              }
-            }}
           >
-            <div className="w-full max-w-[300px] bg-black/50 rounded-xl px-5 py-4">
-              <div className="text-[#f7f3ea] text-[11px] font-bold tracking-[0.2em] text-center mb-3 opacity-50">
-                新纪录
-              </div>
+            <div className="w-full max-w-[300px] bg-black/50 rounded-xl px-5 py-4 pt-4">
+              <input
+                ref={overlayRef}
+                type="text"
+                autoFocus
+                value={hsName}
+                onChange={(e) => {
+                  const val = e.target.value.toUpperCase().replace(/[^A-Z0-9 ]/g, "").slice(0, 8);
+                  setHsName(val);
+                }}
+                className="absolute opacity-0 w-0 h-0 pointer-events-none"
+                style={{ position: "absolute", left: -9999 }}
+              />
 
               <div className="mb-2">
                 {displayRows.map((row, i) => {
@@ -2380,7 +2368,7 @@ focus:outline-none
                           row.name
                         )}
                       </span>
-                      <span className="dseg-italic text-[#f7f3ea] text-lg font-bold w-16 text-right tabular-nums">
+                      <span className="dseg-italic text-[#f7f3ea] text-lg font-bold w-20 text-right tabular-nums">
                         {row.score}
                       </span>
                     </div>
