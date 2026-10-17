@@ -7,7 +7,7 @@ const noto = Noto_Sans_SC({
   weight: ["400", "700"],
 });
 import { useEffect, useRef, useState } from "react";
-import { supabase } from "../lib/supabase";
+import { fetchTopScores, insertScore } from "../lib/supabase";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -114,12 +114,7 @@ export default function GamePage() {
 
   const getSupabaseLeaderboard = async () => {
     try {
-      let query = supabase.from("leaderboard").select("name, score");
-
-      const { data, error } = await query
-        .order("score", { ascending: false })
-        .limit(200);
-      if (error) throw error;
+      const data = await fetchTopScores(200);
       // 同名只保留最高分
       const seen = new Map();
       for (const row of data) {
@@ -153,10 +148,8 @@ export default function GamePage() {
   const saveScore = async (name, score) => {
     // 先写 Supabase
     try {
-      const { error } = await supabase
-        .from("leaderboard")
-        .insert({ name, score });
-      if (!error) return;
+      await insertScore(name, score);
+      return;
     } catch {}
     // Fallback 到 localStorage
     const list = getLocalLeaderboard();
